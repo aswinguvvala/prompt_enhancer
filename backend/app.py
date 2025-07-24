@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
-from .config import settings
+from config import settings
 
 # ===== MODEL-SPECIFIC OPTIMIZATION RULES =====
 MODEL_RULES = {
