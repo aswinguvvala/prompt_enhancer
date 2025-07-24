@@ -1,0 +1,32 @@
+# AI Prompt Enhancement Studio Dependencies
+
+# Core API Framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Essential Dependencies
+typing-extensions>=4.8.0
+python-multipart>=0.0.6
+
+# Optional: Development & Testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+httpx>=0.25.2
+
+# Optional: Production Deployment
+gunicorn>=21.2.0
+
+# Optional: Enhanced ML Features (Uncomment if needed)
+# transformers>=4.36.0
+# torch>=2.1.0
+# tokenizers>=0.15.0
+# scikit-learn>=1.3.0
+# nltk>=3.8.1
+# numpy>=1.24.3
+# pandas>=2.0.3
+
+# Optional: Additional HTTP clients
+# aiohttp>=3.9.0
+# python-dotenv>=1.0.0
