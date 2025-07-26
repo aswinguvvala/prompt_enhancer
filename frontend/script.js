@@ -36,7 +36,7 @@ const MODEL_RULES = {
             'Use prefilling to guide output format',
             'Provide context and motivation behind instructions',
             'Break complex tasks into smaller subtasks',
-            'Structure: Task context ’ Tone ’ Background ’ Detailed task',
+            'Structure: Task context ï¿½ Tone ï¿½ Background ï¿½ Detailed task',
             'Use explicit instructions with clear explanations'
         ],
         enhancements: {
@@ -51,7 +51,7 @@ const MODEL_RULES = {
     gemini: {
         name: 'Google Gemini',
         rules: [
-            'Four-component structure: Persona ’ Task ’ Context ’ Format',
+            'Four-component structure: Persona ï¿½ Task ï¿½ Context ï¿½ Format',
             'Use chain-of-thought with self-consistency for accuracy',
             'Implement few-shot learning with consistent example formats',
             'Average 21 words for simple prompts, longer for complex tasks',
@@ -106,20 +106,9 @@ const elements = {
     // Prompt input
     originalPrompt: document.getElementById('originalPrompt'),
     charCount: document.getElementById('charCount'),
-    rulesPreview: document.getElementById('rulesPreview'),
-    rulesList: document.getElementById('rulesList'),
     
     // Settings
-    enhancementType: document.getElementById('enhancementType'),
     maxLength: document.getElementById('maxLength'),
-    temperature: document.getElementById('temperature'),
-    tempValue: document.getElementById('tempValue'),
-    topP: document.getElementById('topP'),
-    topPValue: document.getElementById('topPValue'),
-    evaluateQuality: document.getElementById('evaluateQuality'),
-    generateAlternatives: document.getElementById('generateAlternatives'),
-    alternativesCount: document.getElementById('alternativesCount'),
-    numAlternatives: document.getElementById('numAlternatives'),
     
     // Actions
     enhanceBtn: document.getElementById('enhanceBtn'),
@@ -129,19 +118,12 @@ const elements = {
     resultsSection: document.getElementById('resultsSection'),
     processingTime: document.getElementById('processingTime'),
     modelUsed: document.getElementById('modelUsed'),
-    qualityScore: document.getElementById('qualityScore'),
     originalPromptDisplay: document.getElementById('originalPromptDisplay'),
     enhancedPromptDisplay: document.getElementById('enhancedPromptDisplay'),
-    originalQuality: document.getElementById('originalQuality'),
-    enhancedQuality: document.getElementById('enhancedQuality'),
-    qualityImprovement: document.getElementById('qualityImprovement'),
-    generatedContent: document.getElementById('generatedContent'),
-    generationMetadata: document.getElementById('generationMetadata'),
     alternatives: document.getElementById('alternatives'),
     
     // Export actions
     copyEnhancedBtn: document.getElementById('copyEnhancedBtn'),
-    copyGeneratedBtn: document.getElementById('copyGeneratedBtn'),
     exportBtn: document.getElementById('exportBtn'),
     
     // Loading
@@ -153,7 +135,7 @@ const elements = {
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     setupEventListeners();
-    checkSystemStatus();
+    checkSystemStatusDetailed();
 });
 
 function initializeApp() {
@@ -164,14 +146,12 @@ function initializeApp() {
     // Initialize character counter
     updateCharCount();
     
-    // Initialize range value displays
-    updateRangeValue('temperature', 'tempValue');
-    updateRangeValue('topP', 'topPValue');
+    // Settings initialized with default values
     
     // Set initial button state
     updateEnhanceButtonState();
     
-    console.log('=€ AI Prompt Enhancement Studio initialized');
+    console.log('=ï¿½ AI Prompt Enhancement Studio initialized');
 }
 
 // ===== EVENT LISTENERS =====
@@ -188,10 +168,7 @@ function setupEventListeners() {
     elements.originalPrompt?.addEventListener('input', handlePromptInput);
     elements.originalPrompt?.addEventListener('paste', handlePromptPaste);
     
-    // Settings
-    elements.temperature?.addEventListener('input', () => updateRangeValue('temperature', 'tempValue'));
-    elements.topP?.addEventListener('input', () => updateRangeValue('topP', 'topPValue'));
-    elements.generateAlternatives?.addEventListener('change', toggleAlternativesCount);
+    // Settings event listeners removed (simplified system)
     
     // Actions
     elements.enhanceBtn?.addEventListener('click', enhancePrompt);
@@ -199,7 +176,6 @@ function setupEventListeners() {
     
     // Export actions
     elements.copyEnhancedBtn?.addEventListener('click', () => copyToClipboard('enhanced'));
-    elements.copyGeneratedBtn?.addEventListener('click', () => copyToClipboard('generated'));
     elements.exportBtn?.addEventListener('click', exportResults);
     
     // Keyboard shortcuts
@@ -241,8 +217,6 @@ function selectModel(modelId) {
         elements.selectedModelDisplay.textContent = MODEL_RULES[modelId]?.name || 'Unknown';
     }
     
-    // Show rules preview
-    showRulesPreview(modelId);
     
     // Update enhance button state
     updateEnhanceButtonState();
@@ -259,28 +233,6 @@ function selectModel(modelId) {
     console.log(`> Selected model: ${MODEL_RULES[modelId]?.name}`);
 }
 
-function showRulesPreview(modelId) {
-    const rules = MODEL_RULES[modelId]?.rules || [];
-    
-    if (rules.length === 0) {
-        elements.rulesPreview.style.display = 'none';
-        return;
-    }
-    
-    // Create rules list HTML
-    const rulesHTML = rules.map(rule => `
-        <div class="rule-item">
-            <i class="fas fa-check-circle"></i>
-            <span>${rule}</span>
-        </div>
-    `).join('');
-    
-    elements.rulesList.innerHTML = rulesHTML;
-    elements.rulesPreview.style.display = 'block';
-    
-    // Add fade-in animation
-    elements.rulesPreview.classList.add('fade-in');
-}
 
 // ===== PROMPT HANDLING =====
 function handlePromptInput() {
@@ -306,19 +258,21 @@ function updateCharCount() {
     }
 }
 
-// ===== SETTINGS MANAGEMENT =====
-function updateRangeValue(rangeId, displayId) {
-    const range = document.getElementById(rangeId);
-    const display = document.getElementById(displayId);
-    if (range && display) {
-        display.textContent = range.value;
+function updateProgressMessage(message) {
+    // Update progress message for users during long AI processing
+    const enhancedSection = document.querySelector('.enhanced-prompt');
+    if (enhancedSection) {
+        enhancedSection.innerHTML = `<div class="progress-message">
+            <div class="spinner"></div>
+            <p>${message}</p>
+            <small>Processing may take up to 2 minutes for complex prompts...</small>
+        </div>`;
     }
 }
 
-function toggleAlternativesCount() {
-    const isChecked = elements.generateAlternatives?.checked;
-    elements.alternativesCount.style.display = isChecked ? 'flex' : 'none';
-}
+// ===== SETTINGS MANAGEMENT =====
+// Range value update function removed - simplified UI system
+
 
 // ===== PROMPT ENHANCEMENT =====
 async function enhancePrompt() {
@@ -334,17 +288,10 @@ async function enhancePrompt() {
         const requestData = {
             prompt: elements.originalPrompt.value.trim(),
             target_model: selectedModel,
-            enhancement_type: elements.enhancementType?.value || 'general',
-            max_length: parseInt(elements.maxLength?.value) || 512,
-            temperature: parseFloat(elements.temperature?.value) || 0.7,
-            top_p: parseFloat(elements.topP?.value) || 0.9,
-            evaluate_quality: elements.evaluateQuality?.checked ?? true,
-            generate_alternatives: elements.generateAlternatives?.checked ?? false,
-            num_alternatives: parseInt(elements.numAlternatives?.value) || 3
+            enhancement_type: 'comprehensive',
+            max_length: parseInt(elements.maxLength?.value) || 512
         };
         
-        // Simulate processing steps
-        await simulateProcessingSteps();
         
         // Apply model-specific enhancements
         const enhancedPrompt = applyModelEnhancements(requestData.prompt, selectedModel);
@@ -405,96 +352,140 @@ function applyModelEnhancements(originalPrompt, modelId) {
 }
 
 async function makeEnhancementRequest(requestData, enhancedPrompt) {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simulate response (replace with actual API call)
-    const mockResponse = {
-        original_prompt: requestData.prompt,
-        enhanced_prompt: enhancedPrompt,
-        generated_text: generateMockContent(enhancedPrompt, requestData.enhancement_type),
-        original_quality: generateMockMetrics(),
-        enhanced_quality: generateMockMetrics(true),
-        quality_improvement: generateQualityImprovement(),
-        generation_metadata: {
-            model: MODEL_RULES[selectedModel].name,
-            processing_time: Math.floor(Math.random() * 2000) + 1000,
-            temperature: requestData.temperature,
-            top_p: requestData.top_p,
-            max_length: requestData.max_length,
-            tokens_used: Math.floor(Math.random() * 500) + 200
-        },
-        processing_time: Math.floor(Math.random() * 2000) + 1000,
-        alternatives: requestData.generate_alternatives ? generateMockAlternatives(requestData.num_alternatives) : null
-    };
-    
-    return mockResponse;
-}
-
-function generateMockContent(prompt, type) {
-    const templates = {
-        general: 'This is a comprehensive response to your enhanced prompt. The system has analyzed your requirements and provided a detailed, structured answer that addresses all key points mentioned in your request.',
-        creative_writing: 'Once upon a digital realm, where artificial intelligence and human creativity danced together in perfect harmony, there existed a prompt enhancement system that could transform simple requests into magnificent literary adventures.',
-        technical: '## Technical Implementation\n\n### Overview\nThis technical documentation provides a comprehensive guide to implementing the requested functionality.\n\n### Requirements\n- System compatibility\n- Performance optimization\n- Security considerations',
-        analysis: '## Data Analysis Results\n\n### Key Findings\n1. Primary insights from the analysis\n2. Statistical significance\n3. Recommendations for action\n\n### Methodology\nThe analysis was conducted using advanced analytical techniques.',
-        coding: '```python\n# Enhanced code solution\ndef enhanced_function(parameters):\n    """\n    Optimized implementation based on enhanced prompt\n    """\n    result = process_enhanced_logic(parameters)\n    return result\n```'
-    };
-    
-    return templates[type] || templates.general;
-}
-
-function generateMockMetrics(isEnhanced = false) {
-    const base = isEnhanced ? 0.8 : 0.6;
-    const variance = 0.15;
-    
-    return {
-        specificity: Math.min(1, base + Math.random() * variance),
-        clarity: Math.min(1, base + Math.random() * variance),
-        completeness: Math.min(1, base + Math.random() * variance),
-        actionability: Math.min(1, base + Math.random() * variance),
-        overall: Math.min(1, base + Math.random() * variance)
-    };
-}
-
-function generateQualityImprovement() {
-    return {
-        specificity: Math.random() * 0.3 + 0.1,
-        clarity: Math.random() * 0.3 + 0.1,
-        completeness: Math.random() * 0.3 + 0.1,
-        actionability: Math.random() * 0.3 + 0.1,
-        overall: Math.random() * 0.3 + 0.1
-    };
-}
-
-function generateMockAlternatives(count) {
-    const alternatives = [];
-    for (let i = 0; i < count; i++) {
-        alternatives.push({
-            prompt: `Alternative enhanced prompt variation ${i + 1}`,
-            generated_text: `Alternative generated content ${i + 1} with different approach and perspective.`,
-            quality_score: Math.random() * 0.3 + 0.7
+    try {
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout for complex AI processing
+        
+        // Add progress monitoring
+        let progressMessages = [
+            { time: 5000, message: "Analyzing your prompt with AI models..." },
+            { time: 15000, message: "Applying model-specific optimization rules..." },
+            { time: 30000, message: "AI is generating enhanced version..." },
+            { time: 60000, message: "Complex prompt detected, using advanced processing..." },
+            { time: 90000, message: "Finalizing enhancement with quality checks..." }
+        ];
+        
+        let progressIndex = 0;
+        const progressInterval = setInterval(() => {
+            if (progressIndex < progressMessages.length) {
+                const progress = progressMessages[progressIndex];
+                updateProgressMessage(progress.message);
+                progressIndex++;
+            }
+        }, 10000); // Update every 10 seconds
+        
+        // Make actual API call to backend
+        const response = await fetch('http://localhost:8001/enhance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        clearInterval(progressInterval); // Clear progress updates
+        
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        return result;
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        clearInterval(progressInterval); // Clear progress updates on error
+        console.error('Enhancement API call failed:', error);
+        console.log('Error type:', error.name);
+        console.log('Error message:', error.message);
+        console.log('Full error:', error);
+        
+        // Comprehensive error handling with specific feedback
+        let errorMessage = 'Unknown error occurred. Check browser console for details.';
+        let generatedMessage = 'Unable to generate content. Check console logs for debugging information.';
+        let suggestions = ['Open browser developer tools to see detailed error information'];
+        
+        if (error.name === 'AbortError') {
+            errorMessage = `AI processing timed out after 120 seconds.`;
+            generatedMessage = 'The AI enhancement is taking longer than expected. The system has multiple timeout fallbacks:';
+            suggestions = [
+                'Try again - the system uses faster models on retry',
+                'Simplify your prompt to reduce processing complexity', 
+                'The backend automatically tries quick enhancement mode after timeouts',
+                'Check if your AI model (Ollama) is responding properly',
+                'Verify sufficient system resources are available'
+            ];
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Cannot connect to backend server. Server may not be running.';
+            generatedMessage = 'The AI Prompt Enhancement Studio backend is not accessible.';
+            suggestions = [
+                'Start the backend server: python start_server.py',
+                'Check if port 8001 is available and not blocked',
+                'Verify the server is running on localhost:8001',
+                'Check firewall settings and network connectivity'
+            ];
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Server internal error. The AI model may be unavailable.';
+            generatedMessage = 'The enhancement engine encountered an unexpected issue.';
+            suggestions = [
+                'Check if Ollama is running: ollama serve',
+                'Verify the llama3.2:3b model is available: ollama list',
+                'Try restarting the backend server',
+                'Check server logs for detailed error information'
+            ];
+        } else if (error.message.includes('429')) {
+            errorMessage = 'Rate limit exceeded. Too many requests sent recently.';
+            generatedMessage = 'Please wait a moment before trying again.';
+            suggestions = [
+                'Wait 30 seconds before making another request',
+                'Consider caching frequently used prompts',
+                'Use Quick Mode to reduce server load',
+                'Check if multiple instances are running'
+            ];
+        } else if (error.message.includes('413')) {
+            errorMessage = 'Prompt too large. The input exceeds size limits.';
+            generatedMessage = 'Your prompt may be too long for processing.';
+            suggestions = [
+                'Reduce prompt length to under 2000 characters',
+                'Break complex prompts into smaller parts',
+                'Remove unnecessary details from your prompt',
+                'Use Ultra Mode for complex prompts if needed'
+            ];
+        }
+        
+        // Create detailed error display
+        const errorDetails = suggestions.length > 0 ? 
+            `\n\nSuggested solutions:\n${suggestions.map(s => `â€¢ ${s}`).join('\n')}` : '';
+        
+        generatedMessage += errorDetails;
+        
+        // Fallback response for when API fails
+        return {
+            original_prompt: requestData.prompt,
+            enhanced_prompt: errorMessage,
+            generated_text: generatedMessage,
+            generation_metadata: {
+                model: MODEL_RULES[selectedModel]?.name || 'Unknown',
+                processing_time: 0,
+                temperature: requestData.temperature,
+                top_p: requestData.top_p,
+                max_length: requestData.max_length,
+                tokens_used: 0
+            },
+            processing_time: 0,
+            alternatives: null,
+            error: error.message,
+            fallback_used: true
+        };
     }
-    return alternatives;
 }
+
+// Removed mock generation functions - now using real AI API calls
 
 // ===== LOADING ANIMATION =====
-async function simulateProcessingSteps() {
-    const steps = [
-        { id: 'step1', delay: 500 },
-        { id: 'step2', delay: 800 },
-        { id: 'step3', delay: 600 },
-        { id: 'step4', delay: 700 }
-    ];
-    
-    for (const step of steps) {
-        const stepElement = document.getElementById(step.id);
-        if (stepElement) {
-            stepElement.classList.add('active');
-        }
-        await new Promise(resolve => setTimeout(resolve, step.delay));
-    }
-}
 
 function showLoading(show) {
     if (elements.loadingOverlay) {
@@ -520,23 +511,13 @@ function displayResults(response) {
     elements.resultsSection.style.display = 'block';
     elements.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
-    // Processing info
+    // Processing info  
     elements.processingTime.textContent = response.processing_time;
     elements.modelUsed.textContent = response.generation_metadata.model;
-    elements.qualityScore.textContent = Math.round(response.enhanced_quality.overall * 100);
     
     // Prompt comparison
     elements.originalPromptDisplay.textContent = response.original_prompt;
     elements.enhancedPromptDisplay.textContent = response.enhanced_prompt;
-    
-    // Quality metrics
-    displayQualityMetrics(elements.originalQuality, response.original_quality);
-    displayQualityMetrics(elements.enhancedQuality, response.enhanced_quality);
-    displayQualityImprovement(response.quality_improvement);
-    
-    // Generated content
-    elements.generatedContent.innerHTML = formatGeneratedContent(response.generated_text);
-    displayGenerationMetadata(response.generation_metadata);
     
     // Alternatives
     if (response.alternatives) {
@@ -547,77 +528,8 @@ function displayResults(response) {
     elements.resultsSection.classList.add('fade-in');
 }
 
-function displayQualityMetrics(container, metrics) {
-    if (!container || !metrics) return;
-    
-    const metricsHTML = Object.entries(metrics).map(([key, value]) => {
-        const percentage = Math.round(value * 100);
-        const colorClass = percentage >= 80 ? 'success' : percentage >= 60 ? 'warning' : 'error';
-        return `<span class="metric ${colorClass}">${key}: ${percentage}%</span>`;
-    }).join('');
-    
-    container.innerHTML = metricsHTML;
-}
+// Quality metrics functions removed - no longer displaying fake metrics
 
-function displayQualityImprovement(improvement) {
-    if (!elements.qualityImprovement || !improvement) return;
-    
-    const improvementHTML = `
-        <div class="improvement-summary">
-            <h4><i class="fas fa-chart-line"></i> Quality Improvement</h4>
-            <div class="improvement-grid">
-                ${Object.entries(improvement).map(([key, value]) => `
-                    <div class="improvement-item">
-                        <span class="improvement-label">${key}</span>
-                        <span class="improvement-value">+${Math.round(value * 100)}%</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    elements.qualityImprovement.innerHTML = improvementHTML;
-}
-
-function formatGeneratedContent(content) {
-    // Simple formatting for different content types
-    if (content.includes('```')) {
-        return content.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-    }
-    
-    if (content.includes('##')) {
-        return content.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    }
-    
-    return content.replace(/\n/g, '<br>');
-}
-
-function displayGenerationMetadata(metadata) {
-    if (!elements.generationMetadata || !metadata) return;
-    
-    const metadataHTML = `
-        <div class="metadata-grid">
-            <div class="metadata-item">
-                <span class="metadata-label">Tokens Used:</span>
-                <span class="metadata-value">${metadata.tokens_used}</span>
-            </div>
-            <div class="metadata-item">
-                <span class="metadata-label">Temperature:</span>
-                <span class="metadata-value">${metadata.temperature}</span>
-            </div>
-            <div class="metadata-item">
-                <span class="metadata-label">Top-p:</span>
-                <span class="metadata-value">${metadata.top_p}</span>
-            </div>
-            <div class="metadata-item">
-                <span class="metadata-label">Max Length:</span>
-                <span class="metadata-value">${metadata.max_length}</span>
-            </div>
-        </div>
-    `;
-    
-    elements.generationMetadata.innerHTML = metadataHTML;
-}
 
 function displayAlternatives(alternatives) {
     if (!elements.alternatives || !alternatives.length) return;
@@ -626,13 +538,15 @@ function displayAlternatives(alternatives) {
         <div class="alternatives-container">
             <h4><i class="fas fa-list-alt"></i> Alternative Variations</h4>
             <div class="alternatives-grid">
-                ${alternatives.map((alt, index) => `
-                    <div class="alternative-item">
-                        <h5>Alternative ${index + 1} (Quality: ${Math.round(alt.quality_score * 100)}%)</h5>
-                        <div class="alternative-prompt">${alt.prompt}</div>
-                        <div class="alternative-content">${alt.generated_text}</div>
-                    </div>
-                `).join('')}
+                ${alternatives.map((alt, index) => {
+                    return `
+                        <div class="alternative-item">
+                            <h5>Alternative ${index + 1}</h5>
+                            <div class="alternative-prompt">${alt.prompt}</div>
+                            <div class="alternative-content">${alt.generated_text}</div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -662,10 +576,6 @@ function clearAll() {
         elements.resultsSection.style.display = 'none';
     }
     
-    // Hide rules preview
-    if (elements.rulesPreview) {
-        elements.rulesPreview.style.display = 'none';
-    }
     
     // Reset model selection
     selectedModel = null;
@@ -682,19 +592,14 @@ function clearAll() {
     // Clear localStorage
     localStorage.removeItem('draftPrompt');
     
-    console.log('>ù Cleared all inputs and results');
+    console.log('>ï¿½ Cleared all inputs and results');
 }
 
 async function copyToClipboard(type) {
     let text = '';
     
-    switch (type) {
-        case 'enhanced':
-            text = elements.enhancedPromptDisplay?.textContent || '';
-            break;
-        case 'generated':
-            text = elements.generatedContent?.textContent || '';
-            break;
+    if (type === 'enhanced') {
+        text = elements.enhancedPromptDisplay?.textContent || '';
     }
     
     if (!text) return;
@@ -714,9 +619,7 @@ function exportResults() {
         model: selectedModel,
         original_prompt: elements.originalPromptDisplay?.textContent || '',
         enhanced_prompt: elements.enhancedPromptDisplay?.textContent || '',
-        generated_content: elements.generatedContent?.textContent || '',
-        processing_time: elements.processingTime?.textContent || '',
-        quality_score: elements.qualityScore?.textContent || ''
+        processing_time: elements.processingTime?.textContent || ''
     };
     
     const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
@@ -752,6 +655,62 @@ function showToast(message, type = 'success') {
 
 function showError(message) {
     showToast(message, 'error');
+}
+
+function showProgressUpdate(message, type = 'info') {
+    // Create progress notification
+    const progressDiv = document.createElement('div');
+    progressDiv.className = `progress-update ${type}`;
+    progressDiv.innerHTML = `
+        <div class="progress-icon">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+        </div>
+        <div class="progress-message">${message}</div>
+    `;
+    
+    // Add to status area or create floating notification
+    const statusArea = document.querySelector('.status-indicator') || document.body;
+    statusArea.appendChild(progressDiv);
+    
+    // Auto-remove after delay
+    setTimeout(() => {
+        if (progressDiv.parentNode) {
+            progressDiv.parentNode.removeChild(progressDiv);
+        }
+    }, 4000);
+}
+
+// Enhanced system status checker with progress updates
+async function checkSystemStatusDetailed() {
+    try {
+        showProgressUpdate('Checking system status...', 'info');
+        
+        const response = await fetch('http://localhost:8001/system/performance');
+        const data = await response.json();
+        
+        if (response.ok) {
+            const systemPerf = data.system_performance;
+            const cacheHitRate = systemPerf.cache.hit_rate * 100;
+            
+            showProgressUpdate(`System ready - Cache efficiency: ${cacheHitRate.toFixed(1)}%`, 'success');
+            
+            // Update status display
+            if (elements.statusDot && elements.statusText) {
+                elements.statusDot.style.background = 'var(--success-gradient)';
+                elements.statusText.textContent = `Ready (${cacheHitRate.toFixed(0)}% cached)`;
+            }
+        } else {
+            throw new Error('Status check failed');
+        }
+        
+    } catch (error) {
+        showProgressUpdate('System status check failed - some features may be limited', 'error');
+        
+        if (elements.statusDot && elements.statusText) {
+            elements.statusDot.style.background = 'var(--warning-gradient)';
+            elements.statusText.textContent = 'Limited';
+        }
+    }
 }
 
 // ===== KEYBOARD SHORTCUTS =====
@@ -946,4 +905,52 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
-console.log('<¨ AI Prompt Enhancement Studio - JavaScript loaded successfully!');
+// ===== DEBUGGING FUNCTIONS =====
+// Test API connectivity from browser console
+window.testAPI = async function() {
+    console.log('ðŸ” Testing API connectivity...');
+    
+    try {
+        // Test health endpoint
+        const healthResponse = await fetch('http://localhost:8001/health');
+        if (healthResponse.ok) {
+            const healthData = await healthResponse.json();
+            console.log('âœ… Health check passed:', healthData);
+        } else {
+            console.error('âŒ Health check failed:', healthResponse.status, healthResponse.statusText);
+            return false;
+        }
+        
+        // Test enhance endpoint
+        const testRequest = {
+            prompt: "Test prompt",
+            target_model: "claude",
+            enhancement_type: "comprehensive",
+            max_length: 100,
+            evaluate_quality: false
+        };
+        
+        console.log('ðŸ”§ Testing enhance endpoint...');
+        const enhanceResponse = await fetch('http://localhost:8001/enhance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(testRequest)
+        });
+        
+        if (enhanceResponse.ok) {
+            const enhanceData = await enhanceResponse.json();
+            console.log('âœ… Enhance endpoint working:', enhanceData);
+            return true;
+        } else {
+            console.error('âŒ Enhance endpoint failed:', enhanceResponse.status, enhanceResponse.statusText);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('âŒ API test failed:', error);
+        return false;
+    }
+};
+
+console.log('ðŸš€ AI Prompt Enhancement Studio - JavaScript loaded successfully!');
+console.log('ðŸ’¡ Use testAPI() in console to debug API connectivity');
