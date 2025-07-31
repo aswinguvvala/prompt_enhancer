@@ -1429,28 +1429,28 @@ def main():
             'description': '',
             'features': [],
             'icon_class': 'openai-icon',
-            'icon_text': '🤖'
+            'icon_text': 'GPT'
         },
         'claude': {
             'name': 'Anthropic Claude',
             'description': '',
             'features': [],
             'icon_class': 'claude-icon',
-            'icon_text': '🧠'
+            'icon_text': 'C'
         },
         'gemini': {
             'name': 'Google Gemini',
             'description': '',
             'features': [],
             'icon_class': 'gemini-icon',
-            'icon_text': '💎'
+            'icon_text': 'G'
         },
         'grok': {
             'name': 'xAI Grok',
             'description': '',
             'features': [],
             'icon_class': 'grok-icon',
-            'icon_text': '⚡'
+            'icon_text': 'X'
         }
     }
     
@@ -1463,7 +1463,7 @@ def main():
             
             card_html = f"""
             <div class="model-card {selected_class}" onclick="selectModel('{model_key}')">
-                <div class="model-icon {config['icon_class']}" style="font-size: 3rem; margin-bottom: 1rem;">{config['icon_text']}</div>
+                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
                 <h4 class="model-name">{config['name']}</h4>
             </div>
             """
@@ -1479,7 +1479,7 @@ def main():
             
             card_html = f"""
             <div class="model-card {selected_class}">
-                <div class="model-icon {config['icon_class']}" style="font-size: 3rem; margin-bottom: 1rem;">{config['icon_text']}</div>
+                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
                 <h4 class="model-name">{config['name']}</h4>
             </div>
             """
