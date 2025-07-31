@@ -5,279 +5,217 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Prompt Enhancement Studio</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Animated Background -->
-        <div class="background-animation">
-            <div class="floating-shapes">
-                <div class="shape shape-1"></div>
-                <div class="shape shape-2"></div>
-                <div class="shape shape-3"></div>
-                <div class="shape shape-4"></div>
-            </div>
-        </div>
-
-        <!-- Header -->
+    <div class="container">
         <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-magic"></i>
-                    <h1>AI Prompt Studio</h1>
-                </div>
-                <div class="header-controls">
-                    <button class="theme-toggle" id="themeToggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <div class="status-indicator">
-                        <div class="status-dot" id="statusDot"></div>
-                        <span class="status-text" id="statusText">Ready</span>
-                    </div>
+            <div class="logo">
+                <span class="logo-icon">🎨</span>
+                <span class="logo-text">AI Prompt Studio</span>
+            </div>
+            <div class="header-controls">
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Limited</span>
                 </div>
             </div>
         </header>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Hero Section -->
-            <section class="hero-section">
-                <div class="hero-content">
-                    <h2 class="hero-title">
-                        <span class="gradient-text">AI Prompt Enhancement Studio</span>
-                        <br>Professional-Grade Optimization
-                    </h2>
-                    <p class="hero-subtitle">
-                        Leverage real AI models to enhance prompts with model-specific intelligence for OpenAI GPT-4, Anthropic Claude, Google Gemini, and xAI Grok
-                    </p>
-                </div>
-            </section>
+            <div class="hero-section">
+                <h1 class="hero-title">AI Prompt Enhancement Studio</h1>
+                <h2 class="hero-subtitle">Professional-Grade Optimization</h2>
+                <p class="hero-description">
+                    Leverage real AI models to enhance prompts with model-specific intelligence for OpenAI GPT-4, Anthropic Claude, Google Gemini, and xAI Grok
+                </p>
+            </div>
 
-            <!-- Model Selection -->
             <section class="model-selection">
                 <h3 class="section-title">Choose Your AI Model</h3>
                 <div class="model-grid">
-                    <div class="model-card openai" data-model="openai">
-                        <div class="model-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="model-info">
-                            <h4>OpenAI GPT-4</h4>
-                            <p>Advanced reasoning with structured thinking</p>
-                            <div class="model-features">
-                                <span class="feature">Step-by-step reasoning</span>
-                                <span class="feature">Detailed explanations</span>
-                            </div>
-                        </div>
-                        <div class="model-status">
-                            <div class="status-indicator active"></div>
+                    <div class="model-card" data-model="openai">
+                        <div class="model-icon openai-icon">🤖</div>
+                        <h4 class="model-name">OpenAI GPT-4</h4>
+                        <p class="model-description">Advanced reasoning with structured thinking</p>
+                        <div class="model-features">
+                            <span class="feature-tag">Step-by-step reasoning</span>
+                            <span class="feature-tag">Detailed explanations</span>
                         </div>
                     </div>
 
-                    <div class="model-card claude" data-model="claude">
-                        <div class="model-icon">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div class="model-info">
-                            <h4>Anthropic Claude</h4>
-                            <p>Thoughtful and nuanced responses</p>
-                            <div class="model-features">
-                                <span class="feature">Deep analysis</span>
-                                <span class="feature">Ethical reasoning</span>
-                            </div>
-                        </div>
-                        <div class="model-status">
-                            <div class="status-indicator active"></div>
+                    <div class="model-card" data-model="claude">
+                        <div class="model-icon claude-icon">⚡</div>
+                        <h4 class="model-name">Anthropic Claude</h4>
+                        <p class="model-description">Thoughtful and nuanced responses</p>
+                        <div class="model-features">
+                            <span class="feature-tag">Deep analysis</span>
+                            <span class="feature-tag">Ethical reasoning</span>
                         </div>
                     </div>
 
-                    <div class="model-card gemini" data-model="gemini">
-                        <div class="model-icon">
-                            <i class="fas fa-gem"></i>
-                        </div>
-                        <div class="model-info">
-                            <h4>Google Gemini</h4>
-                            <p>Systematic and comprehensive analysis</p>
-                            <div class="model-features">
-                                <span class="feature">Structured approach</span>
-                                <span class="feature">Clear explanations</span>
-                            </div>
-                        </div>
-                        <div class="model-status">
-                            <div class="status-indicator active"></div>
+                    <div class="model-card" data-model="gemini">
+                        <div class="model-icon gemini-icon">💎</div>
+                        <h4 class="model-name">Google Gemini</h4>
+                        <p class="model-description">Systematic and comprehensive analysis</p>
+                        <div class="model-features">
+                            <span class="feature-tag">Structured approach</span>
+                            <span class="feature-tag">Clear explanations</span>
                         </div>
                     </div>
 
-                    <div class="model-card grok" data-model="grok">
-                        <div class="model-icon">
-                            <i class="fas fa-lightning-bolt"></i>
-                        </div>
-                        <div class="model-info">
-                            <h4>xAI Grok</h4>
-                            <p>Practical and direct responses</p>
-                            <div class="model-features">
-                                <span class="feature">Real-time insights</span>
-                                <span class="feature">Actionable advice</span>
-                            </div>
-                        </div>
-                        <div class="model-status">
-                            <div class="status-indicator active"></div>
+                    <div class="model-card" data-model="grok">
+                        <div class="model-icon grok-icon">🚀</div>
+                        <h4 class="model-name">xAI Grok</h4>
+                        <p class="model-description">Practical and direct responses</p>
+                        <div class="model-features">
+                            <span class="feature-tag">Real-time insights</span>
+                            <span class="feature-tag">Actionable advice</span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Prompt Input Section -->
             <section class="prompt-section">
-                <div class="glass-card">
-                    <h3 class="section-title">
-                        <i class="fas fa-edit"></i>
-                        Enter Your Prompt
-                    </h3>
-                    
-                    <div class="prompt-container">
-                        <div class="prompt-input-wrapper">
-                            <textarea 
-                                id="originalPrompt" 
-                                class="prompt-input"
-                                placeholder="Enter your prompt to be enhanced with AI model-specific intelligence... (e.g., 'Analyze the impact of artificial intelligence on modern business operations')"
-                                rows="4"
-                            ></textarea>
-                            <div class="input-footer">
-                                <div class="char-count">
-                                    <span id="charCount">0</span> characters
-                                </div>
-                                <div class="selected-model">
-                                    Selected: <span id="selectedModel">None</span>
-                                </div>
-                            </div>
+                <div class="prompt-container">
+                    <div class="input-section">
+                        <h3 class="section-title">
+                            <span class="section-icon">📝</span>
+                            Enter Your Prompt
+                        </h3>
+                        <textarea 
+                            id="originalPrompt" 
+                            class="prompt-input" 
+                            placeholder="Type your prompt here... e.g., 'CAN YOU ALSO EXPLAIN EVERYTHING IN DETAIL AS WELL WHAT TO DO , WHAT COULD BE ADDED TO MAKE IT BETTER AS WELL'"
+                            rows="8"
+                        ></textarea>
+                        <div class="char-counter">
+                            <span id="charCount">0</span> characters
+                        </div>
+                        <div class="selected-model-info">
+                            <span>Selected: </span>
+                            <span id="selectedModelName">Anthropic Claude 4 (Opus/Sonnet)</span>
                         </div>
                     </div>
 
-                    <!-- Settings Panel -->
-                    <div class="settings-panel">
-                        <h4><i class="fas fa-cogs"></i> Enhancement Settings</h4>
-                        <div class="settings-grid">
-                            <div class="setting-group">
-                                <label for="maxLength">Max Output Length</label>
-                                <input type="number" id="maxLength" class="number-input" value="512" min="50" max="2048" step="50">
-                            </div>
+                    <div class="settings-section">
+                        <h3 class="section-title">
+                            <span class="section-icon">⚙️</span>
+                            Enhancement Settings
+                        </h3>
+                        <div class="setting-group">
+                            <label for="maxLength">Max Output Length</label>
+                            <input type="number" id="maxLength" value="512" min="100" max="2000" step="50">
                         </div>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <button id="enhanceBtn" class="btn btn-primary" disabled>
-                            <i class="fas fa-magic"></i>
-                            <span>Enhance with AI Intelligence</span>
-                        </button>
-                        <button id="clearBtn" class="btn btn-secondary">
-                            <i class="fas fa-trash"></i>
-                            <span>Clear All</span>
-                        </button>
+                        <div class="enhance-controls">
+                            <button id="enhanceBtn" class="enhance-btn">
+                                <span class="btn-icon">✨</span>
+                                Enhance with AI Intelligence
+                            </button>
+                            <button id="clearBtn" class="clear-btn">
+                                <span class="btn-icon">🗑️</span>
+                                Clear All
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Results Section -->
-            <section class="results-section" id="resultsSection" style="display: none;">
-                <div class="glass-card">
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <div class="results-header">
                     <h3 class="section-title">
-                        <i class="fas fa-chart-line"></i>
+                        <span class="section-icon">📊</span>
                         Enhancement Results
                     </h3>
-                    
-                    <!-- Processing Info -->
                     <div class="processing-info">
-                        <div class="info-item">
-                            <i class="fas fa-clock"></i>
-                            <span>Processing time: <span id="processingTime">--</span>ms</span>
+                        <span class="processing-time">
+                            <span class="info-icon">⏱️</span>
+                            Processing time: <span id="processingTime">-</span>ms
+                        </span>
+                        <span class="model-used">
+                            <span class="info-icon">🤖</span>
+                            Model: <span id="modelUsed">-</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="results-container">
+                    <div class="result-panel original-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <span class="panel-icon">📄</span>
+                                <span class="panel-title">Original Prompt</span>
+                            </div>
+                            <div class="panel-stats">
+                                <span class="word-count" id="originalWordCount">0 words</span>
+                                <button class="panel-copy-btn" data-target="originalPromptDisplay" aria-label="Copy original prompt">
+                                    <span class="btn-icon">📋</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <i class="fas fa-microchip"></i>
-                            <span>Model: <span id="modelUsed">--</span></span>
+                        <div class="panel-content">
+                            <pre id="originalPromptDisplay" class="prompt-display"></pre>
                         </div>
                     </div>
-                    
-                    <!-- Prompt Comparison -->
-                    <div class="prompt-comparison">
-                        <div class="comparison-card original">
-                            <h4><i class="fas fa-file-text"></i> Original Prompt</h4>
-                            <div class="prompt-display" id="originalPromptDisplay"></div>
-                        </div>
-                        
-                        <div class="enhancement-arrow">
-                            <i class="fas fa-arrow-right"></i>
-                            <span>Enhanced</span>
-                        </div>
-                        
-                        <div class="comparison-card enhanced">
-                            <h4><i class="fas fa-magic"></i> Enhanced Prompt</h4>
-                            <div class="prompt-display" id="enhancedPromptDisplay"></div>
+
+                    <div class="enhancement-arrow">
+                        <div class="arrow-container">
+                            <span class="arrow-text">ENHANCED</span>
+                            <div class="arrow">→</div>
                         </div>
                     </div>
-                    
-                    <!-- Alternatives -->
-                    <div class="alternatives-section" id="alternatives" style="display: none;"></div>
-                    
-                    <!-- Export Actions -->
-                    <div class="export-actions">
-                        <button id="copyEnhancedBtn" class="btn btn-outline">
-                            <i class="fas fa-copy"></i>
-                            <span>Copy Enhanced Prompt</span>
-                        </button>
-                        <button id="exportBtn" class="btn btn-outline">
-                            <i class="fas fa-download"></i>
-                            <span>Export Results</span>
-                        </button>
+
+                    <div class="result-panel enhanced-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <span class="panel-icon">✨</span>
+                                <span class="panel-title">Enhanced Prompt</span>
+                            </div>
+                            <div class="panel-stats">
+                                <span class="word-count" id="enhancedWordCount">0 words</span>
+                                <button class="panel-copy-btn" data-target="enhancedPromptDisplay" aria-label="Copy enhanced prompt">
+                                    <span class="btn-icon">📋</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <pre id="enhancedPromptDisplay" class="prompt-display"></pre>
+                        </div>
                     </div>
+                </div>
+
+                <div class="results-actions">
+                    <button id="copyBtn" class="action-btn copy-btn">
+                        <span class="btn-icon">📋</span>
+                        Copy Enhanced Prompt
+                    </button>
+                    <button id="exportBtn" class="action-btn export-btn">
+                        <span class="btn-icon">💾</span>
+                        Export Results
+                    </button>
                 </div>
             </section>
         </main>
 
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-content">
-                <div class="loading-spinner">
-                    <div class="spinner-ring"></div>
-                    <div class="spinner-ring"></div>
-                    <div class="spinner-ring"></div>
-                </div>
-                <h3>Processing with AI Intelligence...</h3>
-                <div class="loading-steps">
-                    <div class="step" id="step1">
-                        <i class="fas fa-search"></i>
-                        <span>Analyzing prompt structure and context</span>
-                    </div>
-                    <div class="step" id="step2">
-                        <i class="fas fa-magic"></i>
-                        <span>Applying AI model-specific optimization</span>
-                    </div>
-                    <div class="step" id="step3">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Evaluating enhancement quality with AI</span>
-                    </div>
-                    <div class="step" id="step4">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Generating optimized results</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
         <footer class="footer">
-            <div class="footer-content">
-                <p>&copy; 2024 AI Prompt Enhancement Studio. Powered by Ollama, real AI models, and intelligent optimization algorithms.</p>
-                <div class="footer-links">
-                    <a href="#" class="footer-link">Professional AI Enhancement</a>
-                    <a href="#" class="footer-link">Real Model Integration</a>
-                    <a href="#" class="footer-link">Enterprise Ready</a>
-                </div>
-            </div>
+            <p>&copy; 2025 AI Prompt Enhancement Studio - Professional prompt optimization powered by real AI models</p>
         </footer>
     </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p class="loading-text">Enhancing your prompt with AI intelligence...</p>
+            <div class="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="script.js"></script>
 </body>

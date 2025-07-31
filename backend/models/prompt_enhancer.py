@@ -1,6 +1,6 @@
 """
 Real AI Model Integration for Prompt Enhancement
-Supports Ollama, Transformers, and OpenAI-compatible APIs
+OpenAI-only integration for streamlined deployment
 """
 
 import asyncio
@@ -11,9 +11,6 @@ import hashlib
 import time
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-
-from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
-import torch
 
 from config import settings
 
@@ -218,165 +215,30 @@ class EnhancementResult:
     tokens_used: Optional[int] = None
     metadata: Optional[Dict[str, Any]] = None
 
-class OllamaClient:
-    """Client for Ollama API integration."""
-    
-    def __init__(self):
-        self.base_url = settings.OLLAMA_BASE_URL
-        self.model = settings.OLLAMA_MODEL
-        self.timeout = settings.OLLAMA_TIMEOUT
-        self.max_retries = settings.OLLAMA_MAX_RETRIES
-        
-    async def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using Ollama API."""
-        
-        logger.info(f"OllamaClient.generate called with prompt length: {len(prompt)}")
-        logger.debug(f"Ollama prompt preview: {prompt[:300]}...")
-        
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": kwargs.get("temperature", settings.DEFAULT_TEMPERATURE),
-                "top_p": kwargs.get("top_p", settings.DEFAULT_TOP_P),
-                "top_k": kwargs.get("top_k", settings.DEFAULT_TOP_K),
-                "num_predict": kwargs.get("max_length", settings.DEFAULT_MAX_LENGTH)
-            }
-        }
-        
-        for attempt in range(self.max_retries):
-            try:
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
-                    async with session.post(f"{self.base_url}/api/generate", json=payload) as response:
-                        if response.status == 200:
-                            result = await response.json()
-                            return result.get("response", "").strip()
-                        else:
-                            error_text = await response.text()
-                            logger.error(f"Ollama API error (attempt {attempt + 1}): {response.status} - {error_text}")
-                            
-            except asyncio.TimeoutError:
-                logger.error(f"Ollama timeout (attempt {attempt + 1})")
-            except Exception as e:
-                logger.error(f"Ollama error (attempt {attempt + 1}): {str(e)}")
-                
-            if attempt < self.max_retries - 1:
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
-                
-        raise Exception(f"Ollama failed after {self.max_retries} attempts")
-    
-    async def is_available(self) -> bool:
-        """Check if Ollama is available."""
-        try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-                async with session.get(f"{self.base_url}/api/tags") as response:
-                    return response.status == 200
-        except:
-            return False
 
-class TransformersClient:
-    """Client for Hugging Face Transformers integration."""
-    
-    def __init__(self):
-        self.model_name = settings.TRANSFORMERS_MODEL
-        self.device = settings.TRANSFORMERS_DEVICE
-        self.cache_dir = settings.TRANSFORMERS_CACHE_DIR
-        self.pipeline = None
-        self.tokenizer = None
-        
-    async def initialize(self):
-        """Initialize the transformers model and tokenizer."""
-        if self.pipeline is None:
-            try:
-                logger.info(f"Loading Transformers model: {self.model_name}")
-                
-                # Load tokenizer
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    self.model_name,
-                    cache_dir=self.cache_dir
-                )
-                
-                # Add pad token if it doesn't exist
-                if self.tokenizer.pad_token is None:
-                    self.tokenizer.pad_token = self.tokenizer.eos_token
-                
-                # Load model
-                model = AutoModelForCausalLM.from_pretrained(
-                    self.model_name,
-                    cache_dir=self.cache_dir,
-                    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                    device_map="auto" if self.device == "auto" else None
-                )
-                
-                # Create pipeline
-                self.pipeline = pipeline(
-                    "text-generation",
-                    model=model,
-                    tokenizer=self.tokenizer,
-                    device=0 if torch.cuda.is_available() and self.device != "cpu" else -1
-                )
-                
-                logger.info("Transformers model loaded successfully")
-                
-            except Exception as e:
-                logger.error(f"Failed to load Transformers model: {str(e)}")
-                raise
-    
-    async def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using Transformers pipeline."""
-        await self.initialize()
-        
-        try:
-            # Generate text
-            result = self.pipeline(
-                prompt,
-                max_length=kwargs.get("max_length", settings.DEFAULT_MAX_LENGTH),
-                temperature=kwargs.get("temperature", settings.DEFAULT_TEMPERATURE),
-                top_p=kwargs.get("top_p", settings.DEFAULT_TOP_P),
-                do_sample=True,
-                pad_token_id=self.tokenizer.pad_token_id,
-                eos_token_id=self.tokenizer.eos_token_id,
-                num_return_sequences=1,
-                truncation=True
-            )
-            
-            # Extract generated text (remove the original prompt)
-            generated_text = result[0]["generated_text"]
-            if generated_text.startswith(prompt):
-                generated_text = generated_text[len(prompt):].strip()
-            
-            return generated_text
-            
-        except Exception as e:
-            logger.error(f"Transformers generation error: {str(e)}")
-            raise
-    
-    def is_available(self) -> bool:
-        """Check if Transformers can be used."""
-        try:
-            import torch
-            return True
-        except ImportError:
-            return False
 
-class OpenAICompatibleClient:
-    """Client for OpenAI-compatible APIs (LM Studio, etc.)."""
+class OpenAIClient:
+    """Client for OpenAI API using official Python library."""
     
     def __init__(self):
-        self.base_url = settings.OPENAI_COMPATIBLE_BASE_URL
-        self.api_key = settings.OPENAI_COMPATIBLE_API_KEY
-        self.model = settings.OPENAI_COMPATIBLE_MODEL
+        self.api_key = settings.OPENAI_API_KEY
+        self.model = settings.OPENAI_MODEL
+        self.timeout = settings.OPENAI_TIMEOUT
+        self.max_retries = settings.OPENAI_MAX_RETRIES
         
     async def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using OpenAI-compatible API."""
+        """Generate text using OpenAI API."""
+        
+        logger.info(f"=== OPENAI API CALL DEBUG ===")
+        logger.info(f"Model: {self.model}")
+        logger.info(f"Prompt length: {len(prompt)} characters")
+        logger.info(f"Prompt content preview: {prompt[:500]}...")
+        logger.info(f"Parameters: max_tokens={kwargs.get('max_length', settings.DEFAULT_MAX_LENGTH)}, temperature={kwargs.get('temperature', settings.DEFAULT_TEMPERATURE)}, top_p={kwargs.get('top_p', settings.DEFAULT_TOP_P)}")
         
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
         }
-        
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
         
         payload = {
             "model": self.model,
@@ -389,41 +251,60 @@ class OpenAICompatibleClient:
             "stream": False
         }
         
-        try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
-                async with session.post(f"{self.base_url}/chat/completions", json=payload, headers=headers) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result["choices"][0]["message"]["content"].strip()
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"OpenAI-compatible API error: {response.status} - {error_text}")
-                        raise Exception(f"API error: {response.status}")
-                        
-        except Exception as e:
-            logger.error(f"OpenAI-compatible API error: {str(e)}")
-            raise
+        for attempt in range(self.max_retries):
+            try:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+                    async with session.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            response_content = result["choices"][0]["message"]["content"].strip()
+                            logger.info(f"=== OPENAI API RESPONSE DEBUG ===")
+                            logger.info(f"Response length: {len(response_content)} characters")
+                            logger.info(f"Response content preview: {response_content[:500]}...")
+                            logger.info(f"Full response (truncated): {response_content[:1000]}...")
+                            logger.info(f"=== END OPENAI DEBUG ===")
+                            return response_content
+                        else:
+                            error_text = await response.text()
+                            logger.error(f"OpenAI API error (attempt {attempt + 1}): {response.status} - {error_text}")
+                            
+            except asyncio.TimeoutError:
+                logger.error(f"OpenAI timeout (attempt {attempt + 1})")
+            except Exception as e:
+                logger.error(f"OpenAI error (attempt {attempt + 1}): {str(e)}")
+                
+            if attempt < self.max_retries - 1:
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                
+        raise Exception(f"OpenAI API failed after {self.max_retries} attempts")
     
     async def is_available(self) -> bool:
-        """Check if the OpenAI-compatible API is available."""
+        """Check if OpenAI API is available."""
+        if not self.api_key:
+            return False
+            
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-                async with session.get(f"{self.base_url}/models") as response:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}"
+            }
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                async with session.get("https://api.openai.com/v1/models", headers=headers) as response:
                     return response.status == 200
-        except:
+        except Exception as e:
+            logger.error(f"OpenAI availability check failed: {str(e)}")
             return False
 
+
 class PromptEnhancer:
-    """Main prompt enhancement engine with multiple AI backend support and intelligent caching."""
+    """Main prompt enhancement engine with OpenAI integration and intelligent caching."""
     
     def __init__(self):
-        self.primary_backend = settings.AI_BACKEND
-        self.fallback_backend = settings.FALLBACK_BACKEND
+        # OpenAI-only configuration
+        self.primary_backend = "openai"
+        self.fallback_backend = "openai"
         
-        # Initialize clients
-        self.ollama_client = OllamaClient()
-        self.transformers_client = TransformersClient()
-        self.openai_compatible_client = OpenAICompatibleClient()
+        # Initialize OpenAI client only
+        self.openai_client = OpenAIClient()
         
         # Initialize performance systems
         self.cache = PerformanceCache(
@@ -435,7 +316,7 @@ class PromptEnhancer:
         # Legacy model cache (keeping for compatibility)
         self._model_cache = {}
         
-        logger.info("PromptEnhancer initialized with intelligent caching and performance tracking")
+        logger.info("PromptEnhancer initialized with OpenAI-only integration and intelligent caching")
         
     async def enhance_prompt(self, 
                            context_injection_prompt: str,
@@ -548,9 +429,9 @@ class PromptEnhancer:
             
             # If all backends failed
             if enhanced_text is None:
-                logger.error("All AI backends failed, using fallback enhancement")
-                enhanced_text = f"Enhanced version: {original_prompt}"
-                backend_used = "manual_fallback"
+                logger.error("All AI backends failed, using rule-based fallback enhancement")
+                enhanced_text = self._apply_rule_based_enhancement(original_prompt, target_model)
+                backend_used = "rule_based_fallback"
         
         processing_time = time.time() - start_time
         
@@ -558,7 +439,7 @@ class PromptEnhancer:
         enhanced_prompt = self._extract_enhanced_prompt(enhanced_text, original_prompt)
         
         # Cache the successful response (only if from real AI model)
-        if settings.ENABLE_MODEL_CACHING and backend_used != "manual_fallback":
+        if settings.ENABLE_MODEL_CACHING and backend_used not in ["rule_based_fallback", "manual_fallback"]:
             self.cache.store_response(
                 original_prompt, 
                 target_model, 
@@ -587,44 +468,150 @@ class PromptEnhancer:
         )
     
     async def _try_backend(self, backend: str, prompt: str, **kwargs) -> tuple[str, str]:
-        """Try a specific backend for text generation."""
+        """Try OpenAI backend for text generation."""
         
-        if backend == "ollama":
-            if await self.ollama_client.is_available():
-                enhanced_text = await self.ollama_client.generate(prompt, **kwargs)
-                return "ollama", enhanced_text
+        if backend == "openai":
+            if await self.openai_client.is_available():
+                enhanced_text = await self.openai_client.generate(prompt, **kwargs)
+                return "openai", enhanced_text
             else:
-                raise Exception("Ollama not available")
-                
-        elif backend == "transformers":
-            if self.transformers_client.is_available():
-                enhanced_text = await self.transformers_client.generate(prompt, **kwargs)
-                return "transformers", enhanced_text
-            else:
-                raise Exception("Transformers not available")
-                
-        elif backend == "openai_compatible":
-            if await self.openai_compatible_client.is_available():
-                enhanced_text = await self.openai_compatible_client.generate(prompt, **kwargs)
-                return "openai_compatible", enhanced_text
-            else:
-                raise Exception("OpenAI-compatible API not available")
-                
+                raise Exception("OpenAI API not available")
         else:
-            raise Exception(f"Unknown backend: {backend}")
+            raise Exception(f"Only OpenAI backend is supported, got: {backend}")
+    
+    def _apply_rule_based_enhancement(self, original_prompt: str, target_model: str) -> str:
+        """Apply rule-based prompt enhancement when AI models are unavailable."""
+        
+        logger.info(f"Applying rule-based enhancement for {target_model}")
+        
+        # Import re for text processing
+        import re
+        
+        # Clean and analyze the original prompt
+        prompt = original_prompt.strip()
+        
+        # Basic enhancements based on target model
+        enhanced_parts = []
+        
+        # Add role/context if missing
+        if not any(role in prompt.lower() for role in ['you are', 'act as', 'as a', 'you\'re']):
+            if target_model == "openai":
+                enhanced_parts.append("You are an expert assistant.")
+            elif target_model == "claude":
+                enhanced_parts.append("I need you to help me as a knowledgeable assistant.")
+            elif target_model == "gemini":
+                enhanced_parts.append("As an AI assistant,")
+            elif target_model == "grok":
+                enhanced_parts.append("Hey, I need your help with this.")
+        
+        # Add clarity and structure
+        if '?' not in prompt and not prompt.lower().startswith(('please', 'can you', 'could you', 'would you')):
+            if target_model == "openai":
+                enhanced_parts.append("Please")
+            elif target_model == "claude":
+                enhanced_parts.append("Could you please")
+            elif target_model == "gemini":
+                enhanced_parts.append("I would like you to")
+            elif target_model == "grok":
+                enhanced_parts.append("Can you")
+        
+        # Enhance the main prompt content
+        enhanced_prompt = prompt
+        
+        # Add specificity requests
+        specificity_requests = []
+        if len(prompt.split()) < 10:  # Short prompts need more detail requests
+            if target_model == "openai":
+                specificity_requests.append("Please provide detailed explanations and examples.")
+            elif target_model == "claude":
+                specificity_requests.append("I'd appreciate comprehensive details in your response.")
+            elif target_model == "gemini":
+                specificity_requests.append("Please include specific details and context.")
+            elif target_model == "grok":
+                specificity_requests.append("Give me the full breakdown with details.")
+        
+        # Add format guidance if none exists
+        if not any(fmt in prompt.lower() for fmt in ['format', 'structure', 'organize', 'list', 'steps']):
+            if target_model == "openai":
+                specificity_requests.append("Structure your response clearly.")
+            elif target_model == "claude":
+                specificity_requests.append("Please organize your response in a clear, helpful way.")
+            elif target_model == "gemini":
+                specificity_requests.append("Format your response for clarity.")
+            elif target_model == "grok":
+                specificity_requests.append("Make it clear and easy to follow.")
+        
+        # Combine all parts
+        result_parts = []
+        
+        if enhanced_parts:
+            result_parts.extend(enhanced_parts)
+        
+        result_parts.append(enhanced_prompt)
+        
+        if specificity_requests:
+            result_parts.extend(specificity_requests)
+        
+        # Join with appropriate spacing
+        enhanced_result = " ".join(result_parts)
+        
+        # Ensure proper punctuation
+        if not enhanced_result.endswith(('.', '?', '!')):
+            enhanced_result += "."
+        
+        logger.info(f"Rule-based enhancement: {len(original_prompt)} → {len(enhanced_result)} chars")
+        logger.info(f"Enhanced prompt preview: {enhanced_result[:200]}...")
+        
+        return enhanced_result
     
     def _extract_enhanced_prompt(self, ai_response: str, original_prompt: str) -> str:
-        """Extract the enhanced prompt from AI response with improved pattern matching."""
+        """Extract the enhanced prompt from AI response with comprehensive pattern matching for meta-prompt formats."""
         
-        logger.info(f"Extracting enhanced prompt from response: {ai_response[:200]}...")
+        logger.info(f"=== EXTRACTION DEBUG ===")
+        logger.info(f"Original prompt length: {len(original_prompt)}")
+        logger.info(f"AI response length: {len(ai_response)}")
+        logger.info(f"AI response preview: {ai_response[:300]}...")
         
         # Clean up the response first
         ai_response = ai_response.strip()
         
-        # Strategy 1: Look for quoted content (most reliable for prompt responses)
+        # Strategy 1: Look for meta-prompt format responses (for our comprehensive system)
         import re
         
-        # Find all quoted strings that look like prompts
+        # Handle [INST]...[/INST] format responses - the response is everything after [/INST]
+        if "[/INST]" in ai_response:
+            after_inst = ai_response.split("[/INST]", 1)[-1].strip()
+            if after_inst and len(after_inst) > len(original_prompt) * 0.5:
+                # Clean up any remaining artifacts
+                after_inst = re.sub(r'^\s*ENHANCED PROMPT:\s*', '', after_inst, flags=re.IGNORECASE)
+                after_inst = re.sub(r'^\s*Enhanced:\s*', '', after_inst, flags=re.IGNORECASE)
+                after_inst = after_inst.strip()
+                if after_inst and after_inst != original_prompt:
+                    logger.info(f"Found enhanced prompt after [/INST]: {after_inst[:100]}...")
+                    return after_inst
+        
+        # Strategy 2: Look for "ENHANCED PROMPT:" marker (our meta-prompt template)
+        enhanced_prompt_pattern = r'ENHANCED PROMPT:\s*(.+?)(?:\n\n|\Z)'
+        match = re.search(enhanced_prompt_pattern, ai_response, re.IGNORECASE | re.DOTALL)
+        if match:
+            enhanced_text = match.group(1).strip()
+            if enhanced_text and enhanced_text != original_prompt and len(enhanced_text) > 10:
+                logger.info(f"Found enhanced prompt after marker: {enhanced_text[:100]}...")
+                return enhanced_text
+        
+        # Strategy 2.1: Look for content after "ENHANCED PROMPT:" (everything after the marker)
+        if "ENHANCED PROMPT:" in ai_response.upper():
+            parts = ai_response.upper().split("ENHANCED PROMPT:")
+            if len(parts) > 1:
+                # Get the original case version
+                original_parts = ai_response.split("ENHANCED PROMPT:", 1)
+                if len(original_parts) > 1:
+                    enhanced_text = original_parts[1].strip()
+                    if enhanced_text and enhanced_text != original_prompt and len(enhanced_text) > 10:
+                        logger.info(f"Found enhanced prompt after ENHANCED PROMPT marker: {enhanced_text[:100]}...")
+                        return enhanced_text
+        
+        # Strategy 3: Look for quoted content (most reliable for prompt responses)
         quoted_patterns = [
             r'"([^"]{30,})"',  # Standard double quotes
             r"'([^']{30,})'",  # Single quotes
@@ -752,9 +739,19 @@ class PromptEnhancer:
                     logger.info(f"Found enhanced prompt in sentence: {sentence[:100]}...")
                     return sentence
 
-        # Final fallback: return original with enhancement indicator
-        logger.warning(f"Could not extract enhanced prompt, using fallback")
-        return f"Enhanced version: {original_prompt}"
+        # Final fallback: return the AI response as-is if extraction fails
+        logger.warning(f"Could not extract enhanced prompt, returning AI response as-is")
+        # If the AI response is reasonable length and different from original, use it
+        if (ai_response != original_prompt and 
+            len(ai_response.strip()) > 10 and 
+            len(ai_response) < len(original_prompt) * 5):  # Sanity check on length
+            logger.info(f"=== EXTRACTION RESULT: AI RESPONSE AS-IS ===")
+            logger.info(f"Returning AI response: {ai_response[:100]}...")
+            return ai_response.strip()
+        else:
+            # Truly final fallback - return original
+            logger.info(f"=== EXTRACTION RESULT: ORIGINAL UNCHANGED ===")
+            return original_prompt
     
     async def generate_alternatives(self, 
                                   context_injection_prompt: str,
@@ -797,23 +794,14 @@ class PromptEnhancer:
         return alternatives
     
     async def health_check(self) -> Dict[str, Any]:
-        """Check the health of all AI backends with performance statistics."""
+        """Check the health of OpenAI backend with performance statistics."""
         
-        # Basic backend availability
+        # OpenAI backend availability only
         backend_status = {
-            "ollama": {
-                "available": await self.ollama_client.is_available(),
-                "url": self.ollama_client.base_url,
-                "model": self.ollama_client.model
-            },
-            "transformers": {
-                "available": self.transformers_client.is_available(),
-                "model": self.transformers_client.model_name
-            },
-            "openai_compatible": {
-                "available": await self.openai_compatible_client.is_available(),
-                "url": self.openai_compatible_client.base_url,
-                "model": self.openai_compatible_client.model
+            "openai": {
+                "available": await self.openai_client.is_available(),
+                "model": self.openai_client.model,
+                "api_configured": bool(self.openai_client.api_key)
             }
         }
         
@@ -826,8 +814,8 @@ class PromptEnhancer:
             "backends": backend_status,
             "primary_backend": self.primary_backend,
             "fallback_backend": self.fallback_backend,
-            "primary_available": backend_status[self.primary_backend]["available"],
-            "fallback_available": backend_status[self.fallback_backend]["available"],
+            "primary_available": backend_status["openai"]["available"],
+            "fallback_available": backend_status["openai"]["available"],
             "caching": {
                 "enabled": settings.ENABLE_MODEL_CACHING,
                 "statistics": cache_stats
@@ -861,27 +849,17 @@ class PromptEnhancer:
         logger.info("Cache optimization completed")
     
     async def _call_ai_model(self, prompt: str, **kwargs) -> str:
-        """Internal method to call AI model directly."""
+        """Internal method to call OpenAI API directly."""
         try:
             backend_used, response = await self._try_backend(
-                self.primary_backend, 
+                "openai", 
                 prompt, 
                 **kwargs
             )
             return response
         except Exception as e:
-            logger.error(f"AI model call failed: {str(e)}")
-            # Try fallback
-            try:
-                backend_used, response = await self._try_backend(
-                    self.fallback_backend, 
-                    prompt, 
-                    **kwargs
-                )
-                return response
-            except Exception as fallback_error:
-                logger.error(f"Fallback AI model call also failed: {str(fallback_error)}")
-                raise Exception("All AI backends unavailable")
+            logger.error(f"OpenAI API call failed: {str(e)}")
+            raise Exception("OpenAI API unavailable")
 
 # Global instance
 prompt_enhancer = PromptEnhancer()

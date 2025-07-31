@@ -8,28 +8,19 @@ class Settings(BaseSettings):
     
     # API Configuration
     API_HOST: str = "localhost"
-    API_PORT: int = 8000
+    API_PORT: int = 8001  # Updated to match current running instance
     API_RELOAD: bool = True
     
-    # AI Model Backend Configuration
-    AI_BACKEND: str = "ollama"  # Options: "ollama", "transformers", "openai_compatible"
-    FALLBACK_BACKEND: str = "transformers"  # Fallback if primary backend fails
+    # AI Model Backend Configuration (OpenAI Only)
+    AI_BACKEND: str = "openai"  # Only OpenAI backend supported
+    FALLBACK_BACKEND: str = "openai"  # No fallback needed - OpenAI only
     
-    # Ollama Configuration
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.2:1b"  # Changed to 1b model for faster processing
-    OLLAMA_TIMEOUT: int = 90  # Increased timeout for complex prompts
-    OLLAMA_MAX_RETRIES: int = 3  # Increased retries with better timeout handling
+    # OpenAI Configuration (Primary and Only Backend)
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_MODEL: str = "gpt-4o-mini"  # Cost-effective model for prompt enhancement
+    OPENAI_TIMEOUT: int = 60  # Timeout for OpenAI API calls
+    OPENAI_MAX_RETRIES: int = 3  # Number of retries for failed requests
     
-    # Transformers Configuration (Fallback)
-    TRANSFORMERS_MODEL: str = "microsoft/DialoGPT-large"
-    TRANSFORMERS_DEVICE: str = "auto"  # "auto", "cpu", "cuda"
-    TRANSFORMERS_CACHE_DIR: Optional[str] = None
-    
-    # OpenAI-Compatible API Configuration (Alternative)
-    OPENAI_COMPATIBLE_BASE_URL: str = "http://localhost:1234/v1"
-    OPENAI_COMPATIBLE_API_KEY: Optional[str] = None
-    OPENAI_COMPATIBLE_MODEL: str = "local-model"
     
     # Model Generation Parameters (Optimized for speed)
     DEFAULT_MAX_LENGTH: int = 400  # Further reduced for faster generation
@@ -77,9 +68,11 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "http://localhost:8080", 
         "http://localhost:8000",
+        "http://localhost:8001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8080",
         "http://127.0.0.1:8000",
+        "http://127.0.0.1:8001",
         "null",  # Allow file:// origins (browsers send "null" for local files)
         "file://"  # Explicit file protocol support
     ]
@@ -101,7 +94,7 @@ class Settings(BaseSettings):
     TRACK_RESPONSE_TIMES: bool = True
     
     class Config:
-        env_file = ".env"
+        env_file = [".env", "../.env"]  # Check multiple locations
         env_file_encoding = "utf-8"
 
 
