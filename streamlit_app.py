@@ -411,28 +411,56 @@ st.markdown("""
     
     /* Enhanced Model Card Elements */
     .model-icon {
-        font-size: 2.5rem;
+        font-size: 3.5rem;
         margin-bottom: 1rem;
         display: block;
-        filter: drop-shadow(0 0 10px rgba(79, 156, 249, 0.3));
+        font-weight: 900;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', sans-serif;
+        letter-spacing: -0.02em;
         transition: all var(--transition-normal);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
     
     .model-card:hover .model-icon {
-        filter: drop-shadow(0 0 15px rgba(79, 156, 249, 0.5));
-        transform: scale(1.05);
+        transform: scale(1.1);
+        text-shadow: 0 4px 16px currentColor;
         animation: iconFloat 2s ease-in-out infinite;
     }
     
     @keyframes iconFloat {
-        0%, 100% { transform: scale(1.05) translateY(0px); }
-        50% { transform: scale(1.05) translateY(-3px); }
+        0%, 100% { transform: scale(1.1) translateY(0px); }
+        50% { transform: scale(1.1) translateY(-4px); }
     }
     
-    .openai-icon { color: var(--openai-color); }
-    .claude-icon { color: var(--claude-color); }
-    .gemini-icon { color: var(--gemini-color); }
-    .grok-icon { color: var(--grok-color); }
+    /* Official Company Colors */
+    .openai-icon { 
+        color: #10A37F; 
+        background: linear-gradient(135deg, #10A37F, #0F8B6C);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .claude-icon { 
+        color: #CC785C; 
+        background: linear-gradient(135deg, #CC785C, #B8694A);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .gemini-icon { 
+        color: #4285F4; 
+        background: linear-gradient(135deg, #4285F4, #306FE0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .grok-icon { 
+        color: #1DA1F2; 
+        background: linear-gradient(135deg, #1DA1F2, #1991DB);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
     
     .model-name {
         font-size: 1.3rem;
