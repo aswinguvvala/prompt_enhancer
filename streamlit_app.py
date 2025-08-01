@@ -15,11 +15,16 @@ from pathlib import Path
 backend_path = Path(__file__).parent / "backend"
 sys.path.insert(0, str(backend_path))
 
-# Import backend modules
-from config import settings
-from simplified_guides import SIMPLIFIED_MODEL_GUIDES
-from models.prompt_enhancer import PromptEnhancer
-import logging
+# Import backend modules with explicit error handling
+try:
+    from config import settings
+    from simplified_guides import SIMPLIFIED_MODEL_GUIDES
+    from models.prompt_enhancer import PromptEnhancer
+    import logging
+except ImportError as e:
+    st.error(f"Import error: {e}")
+    st.error("Please ensure all backend modules are properly installed.")
+    st.stop()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +33,7 @@ logger = logging.getLogger(__name__)
 # Initialize Streamlit page config
 st.set_page_config(
     page_title="AI Prompt Enhancement Studio",
-    page_icon="🎭",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -1235,19 +1240,42 @@ def initialize_enhancer():
 
 def check_openai_config():
     """Check if OpenAI API is properly configured."""
-    api_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+    # Try multiple sources for API key
+    api_key = None
+    
+    # First try environment variable
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    # Then try Streamlit secrets (for deployment)
+    if not api_key:
+        try:
+            if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+                api_key = st.secrets["OPENAI_API_KEY"]
+        except Exception as e:
+            logger.warning(f"Could not access Streamlit secrets: {e}")
+    
+    # Finally try settings
+    if not api_key:
+        api_key = settings.OPENAI_API_KEY
+    
     if not api_key:
         st.error("""
         🚨 **OpenAI API Key Required**
         
         Please set your OpenAI API key in one of these ways:
-        1. Set environment variable: `OPENAI_API_KEY=your_key_here`
-        2. Add it to a `.env` file in the project root
-        3. Set it in Streamlit secrets (for deployment)
+        1. **For local development:** Set environment variable `OPENAI_API_KEY=your_key_here`
+        2. **For Streamlit Cloud deployment:** Add it to your app's secrets:
+           ```toml
+           [secrets]
+           OPENAI_API_KEY = "your_key_here"
+           ```
+        3. Add it to a `.env` file in the project root
         
         You can get your API key from: https://platform.openai.com/api-keys
         """)
         return False
+    
+    logger.info(f"OpenAI API key found: {api_key[:8]}...{api_key[-4:]}")
     return True
 
 def create_context_injection_prompt(original_prompt: str, target_model: str, enhancement_type: str) -> str:
@@ -1277,64 +1305,24 @@ def create_context_injection_prompt(original_prompt: str, target_model: str, enh
     enhancement_section = "\\n".join([f"• {instruction}" for instruction in enhancement_instructions])
     anti_xml_section = "\\n".join([f"• {instruction}" for instruction in ANTI_XML_INSTRUCTIONS[:4]])
     
-    # Create comprehensive meta-prompt template
-    if enhancement_type == "quick":
-        context_prompt = f"""[INST]
-You are an expert AI Prompt Engineer specializing in {model_name} optimization. Your task is to quickly enhance a user's prompt using proven best practices.
+    # Create simplified, effective context prompt for GPT-4o mini
+    context_prompt = f"""You are an expert prompt engineer. Your job is to improve user prompts to work better with {model_name}.
 
 TARGET MODEL: {model_name}
 DESCRIPTION: {model_description}
 
-KEY OPTIMIZATION RULES:
+KEY RULES FOR {model_name}:
 {rules_section}
 
 WHAT TO AVOID:
 {avoid_section}
 
-ENHANCEMENT GUIDELINES:
-{enhancement_section}
-
-NO TECHNICAL MARKUP:
-{anti_xml_section}
-
 USER'S ORIGINAL PROMPT:
 "{original_prompt}"
 
-Create a significantly improved version that applies the optimization rules above. Write in natural language only - no XML tags, technical markup, or structured formatting.
+Please rewrite this prompt to follow the {model_name} best practices above. Make it clear, specific, and effective for {model_name}. Write only the improved prompt - no explanations or additional text.
 
-ENHANCED PROMPT:
-[/INST]"""
-    else:
-        context_prompt = f"""[INST]
-You are an expert AI Prompt Engineer specializing in {model_name} optimization. Transform the user's raw prompt into a highly effective version using comprehensive, research-based best practices.
-
-TARGET MODEL: {model_name}
-DESCRIPTION: {model_description}
-
-COMPREHENSIVE OPTIMIZATION RULES FOR {model_name.upper()}:
-{rules_section}
-
-OUTPUT GUIDELINES:
-{output_section}
-
-CRITICAL - WHAT TO AVOID:
-{avoid_section}
-
-ENHANCEMENT PROCESS:
-{enhancement_section}
-
-NO TECHNICAL MARKUP REQUIREMENTS:
-{anti_xml_section}
-
-USER'S ORIGINAL PROMPT TO ENHANCE:
-"{original_prompt}"
-
-Your task is to create a dramatically improved version that follows all the {model_name} optimization principles above. Apply systematic enhancement techniques including role assignment, context enrichment, example provision, structured formatting requests, and success criteria specification where appropriate.
-
-Write your enhanced prompt using clear, natural language without any XML tags, angle brackets, or programming-style syntax. The result should be a highly optimized prompt that will generate significantly better responses from {model_name}.
-
-ENHANCED PROMPT:
-[/INST]"""
+ENHANCED PROMPT:"""
     
     return context_prompt
 
@@ -1404,7 +1392,7 @@ def main():
     # Theme toggle functionality
     theme_col1, theme_col2 = st.columns([8, 1])
     with theme_col2:
-        if st.button("🌙" if st.session_state.theme == 'dark' else "☀️", 
+        if st.button("Theme" if st.session_state.theme == 'dark' else "Theme", 
                     help="Toggle theme", 
                     key="theme_toggle",
                     use_container_width=True):
@@ -1415,7 +1403,7 @@ def main():
     st.markdown(f"""
     <div class="professional-header" data-theme="{st.session_state.theme}">
         <div class="logo-section">
-            <div class="logo-icon">🎨</div>
+            <div class="logo-icon">⚡</div>
             <div class="logo-text">PromptCraft AI</div>
         </div>
     </div>
@@ -1531,7 +1519,8 @@ def main():
             "",
             height=200,
             placeholder="Enter your prompt here... For example: 'Help me create a marketing strategy for a new mobile app' or 'Explain quantum computing in simple terms'",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="prompt_input"
         )
         
         # Character counter
@@ -1553,7 +1542,7 @@ def main():
         st.markdown(f"""
         <div class="settings-panel" data-theme="{st.session_state.theme}">
             <h4 class="settings-header">
-                <span class="settings-icon">🎛️</span>
+                <span class="settings-icon">Settings</span>
                 Smart Settings
             </h4>
         </div>
@@ -1564,7 +1553,7 @@ def main():
         
         st.markdown("""
         <div class="enhancement-info">
-            <span class="enhancement-badge">🚀 Intelligent Enhancement</span>
+            <span class="enhancement-badge">Intelligent Enhancement</span>
             <p class="enhancement-desc">AI-powered optimization tailored to your selected model</p>
         </div>
         """, unsafe_allow_html=True)
@@ -1572,16 +1561,19 @@ def main():
         # Enhancement buttons
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Check if prompt is valid for enhancement
+        prompt_is_valid = bool(original_prompt and original_prompt.strip())
+        
         enhance_button = st.button(
-            "🚀 Transform My Prompt",
+            "Transform My Prompt",
             type="primary",
-            disabled=not original_prompt.strip(),
+            disabled=not prompt_is_valid,
             use_container_width=True,
-            help="Transform your prompt with AI-powered intelligence"
+            help="Transform your prompt with AI-powered intelligence" if prompt_is_valid else "Enter some text to enhance your prompt"
         )
         
         clear_button = st.button(
-            "🗑️ Clear All",
+            "Clear All",
             use_container_width=True,
             help="Clear all input and results"
         )
@@ -1608,12 +1600,51 @@ def main():
                 st.session_state.last_processing_time = processing_time
                 st.session_state.last_backend = backend_used
                 
-                st.success(f"🎉 Prompt transformed in {processing_time:.2f}s using {backend_used}")
+                st.success(f"Prompt transformed in {processing_time:.2f}s using {backend_used}")
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"⚠️ Enhancement failed: {str(e)}")
-                st.info("💡 Please check your OpenAI API key and try again.")
+                error_message = str(e)
+                
+                # Provide specific error messages based on the type of error
+                if "Authentication failed" in error_message:
+                    st.error("**API Authentication Error**")
+                    st.error("Your OpenAI API key appears to be invalid or expired.")
+                    st.info("Please check your API key in the deployment settings and ensure it's correct.")
+                elif "Access forbidden" in error_message:
+                    st.error("**API Access Forbidden**")
+                    st.error("Your OpenAI API key doesn't have permission to access the required model.")
+                    st.info("Please check your OpenAI account has sufficient credits and permissions.")
+                elif "Rate limit exceeded" in error_message:
+                    st.error("**Rate Limit Exceeded**")
+                    st.error("Too many requests to OpenAI API. Please wait a moment and try again.")
+                    st.info("This usually resolves itself in a few minutes.")
+                elif "not configured" in error_message:
+                    st.error("**Configuration Error**")
+                    st.error("OpenAI API key is not properly configured.")
+                    st.info("""
+                    **For Streamlit Cloud deployment:**
+                    1. Go to your app settings
+                    2. Click on 'Secrets' 
+                    3. Add: `OPENAI_API_KEY = "your-key-here"`
+                    """)
+                else:
+                    st.error(f"**Enhancement failed:** {error_message}")
+                    st.info("Please check your internet connection and try again.")
+                
+                # Log the full error for debugging
+                logger.error(f"Enhancement failed: {error_message}")
+                
+                # Show fallback result if possible
+                if original_prompt:
+                    st.warning("Showing fallback enhancement...")
+                    fallback_enhanced = f"As an expert assistant, I'll help you with the following: {original_prompt}\n\nI'll provide comprehensive information and clear explanations to ensure you get the most helpful response possible."
+                    
+                    st.session_state.last_original = original_prompt
+                    st.session_state.last_enhanced = fallback_enhanced
+                    st.session_state.last_model = st.session_state.selected_model
+                    st.session_state.last_processing_time = 0
+                    st.session_state.last_backend = "fallback"
     
     # Results Display Section
     if hasattr(st.session_state, 'last_enhanced'):
@@ -1621,16 +1652,16 @@ def main():
         <div class="results-section" data-theme="{st.session_state.theme}">
             <div class="results-header">
                 <h3 class="section-title">
-                    <span>🎯</span>
+                    <span>Results</span>
                     Your Enhanced Prompt
                 </h3>
                 <div class="processing-info">
                     <span class="processing-time">
-                        <span>⚡</span>
+                        <span>Time:</span>
                         Generated in {st.session_state.last_processing_time:.2f}s
                     </span>
                     <span class="model-used">
-                        <span>🤖</span>
+                        <span>Model:</span>
                         Powered by {model_configs[st.session_state.last_model]['name']}
                     </span>
                 </div>
@@ -1645,7 +1676,7 @@ def main():
             st.markdown(f"""
             <div class="result-panel original-panel" data-theme="{st.session_state.theme}">
                 <div class="panel-header">
-                    <span>📝</span>
+                    <span>Original</span>
                     <span>Before</span>
                     <div class="panel-stats">
                         <span class="word-count">{len(st.session_state.last_original.split())} words</span>
@@ -1670,7 +1701,7 @@ def main():
             st.markdown(f"""
             <div class="result-panel enhanced-panel" data-theme="{st.session_state.theme}">
                 <div class="panel-header">
-                    <span>🚀</span>
+                    <span>Enhanced</span>
                     <span>After</span>
                     <div class="panel-stats">
                         <span class="word-count">{len(st.session_state.last_enhanced.split())} words</span>
@@ -1686,28 +1717,10 @@ def main():
         action_col1, action_col2, action_col3 = st.columns([1, 1, 1])
         
         with action_col2:
-            if st.button("📋 Copy Result", use_container_width=True):
+            if st.button("Copy Result", use_container_width=True):
                 # Use Streamlit's built-in method to copy to clipboard
                 st.code(st.session_state.last_enhanced, language=None)
-                st.success("✨ Enhanced prompt ready to copy!")
-        
-        with action_col3:
-            if st.button("💾 Save Results", use_container_width=True):
-                export_data = {
-                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "selected_model": st.session_state.last_model,
-                    "original_prompt": st.session_state.last_original,
-                    "enhanced_prompt": st.session_state.last_enhanced,
-                    "processing_time": st.session_state.last_processing_time,
-                    "backend_used": st.session_state.last_backend
-                }
-                
-                st.download_button(
-                    label="Download JSON",
-                    data=str(export_data),
-                    file_name=f"prompt-enhancement-{int(time.time())}.json",
-                    mime="application/json"
-                )
+                st.success("Enhanced prompt ready to copy!")
 
 if __name__ == "__main__":
     main()

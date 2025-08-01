@@ -66,6 +66,7 @@ class PromptEnhancementStudio {
         const promptInput = document.getElementById('originalPrompt');
         promptInput.addEventListener('input', (e) => {
             this.updateCharCount();
+            this.updateEnhanceButtonState(); // Immediate button state update
             this.validateInputDebounced(e.target.value);
         });
         
@@ -82,10 +83,12 @@ class PromptEnhancementStudio {
         
         // Add paste enhancement
         promptInput.addEventListener('paste', (e) => {
+            // Use a small delay to ensure the pasted content is in the DOM
             setTimeout(() => {
                 this.updateCharCount();
-                this.validateInputDebounced(e.target.value);
-            }, 0);
+                this.updateEnhanceButtonState(); // Immediate button state update
+                this.validateInputDebounced(promptInput.value); // Use current value from DOM
+            }, 10); // Small delay to ensure paste content is processed
         });
         
         // Focus enhancement
@@ -479,7 +482,7 @@ Please provide detailed information and comprehensive explanations to ensure the
             btnText.textContent = 'Enhancing...';
             enhanceBtn.classList.add('loading');
         } else {
-            btnIcon.textContent = '✨';
+            btnIcon.textContent = 'Processing...';
             btnText.textContent = 'Enhance with AI Intelligence';
             enhanceBtn.classList.remove('loading');
         }
@@ -566,8 +569,8 @@ Please provide detailed information and comprehensive explanations to ensure the
         const icons = {
             success: '✅',
             error: '❌',
-            warning: '⚠️',
-            info: 'ℹ️'
+            warning: 'Warning',
+            info: 'Info'
         };
         
         toast.innerHTML = `
@@ -664,10 +667,10 @@ Please provide detailed information and comprehensive explanations to ensure the
         }
         
         if (validation.errors.length > 0) {
-            validationEl.innerHTML = `<div class="validation-error">⚠️ ${validation.errors[0]}</div>`;
+            validationEl.innerHTML = `<div class="validation-error">Error: ${validation.errors[0]}</div>`;
             validationEl.style.display = 'block';
         } else if (validation.warnings.length > 0) {
-            validationEl.innerHTML = `<div class="validation-warning">💡 ${validation.warnings[0]}</div>`;
+            validationEl.innerHTML = `<div class="validation-warning">Warning: ${validation.warnings[0]}</div>`;
             validationEl.style.display = 'block';
         } else {
             validationEl.style.display = 'none';
@@ -753,7 +756,7 @@ Please provide detailed information and comprehensive explanations to ensure the
     
     updateThemeIcon() {
         const themeIcon = document.querySelector('.theme-icon');
-        themeIcon.textContent = this.currentTheme === 'dark' ? '🌙' : '☀️';
+        themeIcon.textContent = this.currentTheme === 'dark' ? 'Dark' : 'Light';
     }
 }
 

@@ -2,6 +2,34 @@ import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 
+# Try to import streamlit for secrets access, but handle gracefully if not available
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
+
+def get_openai_api_key() -> str:
+    """Get OpenAI API key from various sources with Streamlit deployment support."""
+    
+    # First, try environment variable (for local development)
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if api_key:
+        return api_key
+    
+    # Second, try Streamlit secrets (for Streamlit Cloud deployment)
+    if STREAMLIT_AVAILABLE:
+        try:
+            # Access Streamlit secrets if available
+            if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+                return st.secrets["OPENAI_API_KEY"]
+        except Exception as e:
+            print(f"Failed to access Streamlit secrets: {e}")
+    
+    # Return empty string if no key found
+    return ""
+
 
 class Settings(BaseSettings):
     """Configuration settings for the AI prompt enhancement system with real model integration."""
@@ -16,10 +44,15 @@ class Settings(BaseSettings):
     FALLBACK_BACKEND: str = "openai"  # No fallback needed - OpenAI only
     
     # OpenAI Configuration (Primary and Only Backend)
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_KEY: str = ""  # Will be set dynamically
     OPENAI_MODEL: str = "gpt-4o-mini"  # Cost-effective model for prompt enhancement
     OPENAI_TIMEOUT: int = 60  # Timeout for OpenAI API calls
     OPENAI_MAX_RETRIES: int = 3  # Number of retries for failed requests
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Set the API key dynamically to support both local and Streamlit deployment
+        self.OPENAI_API_KEY = get_openai_api_key()
     
     
     # Model Generation Parameters (Optimized for speed)

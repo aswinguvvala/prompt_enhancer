@@ -81,6 +81,9 @@ node_modules/
 .env.production
 .env.local
 
+# Streamlit secrets (never commit actual secrets)
+.streamlit/secrets.toml
+
 # Temporary folders
 tmp/
 temp/

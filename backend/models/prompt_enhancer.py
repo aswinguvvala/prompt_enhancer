@@ -9,6 +9,7 @@ import json
 import logging
 import hashlib
 import time
+import os
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
@@ -221,13 +222,43 @@ class OpenAIClient:
     """Client for OpenAI API using official Python library."""
     
     def __init__(self):
-        self.api_key = settings.OPENAI_API_KEY
+        # Get API key dynamically to support Streamlit deployment
+        self.api_key = settings.OPENAI_API_KEY or self._get_dynamic_api_key()
         self.model = settings.OPENAI_MODEL
         self.timeout = settings.OPENAI_TIMEOUT
         self.max_retries = settings.OPENAI_MAX_RETRIES
         
+        # Log API key status for debugging (without exposing the key)
+        if self.api_key:
+            logger.info(f"OpenAI API key configured: {self.api_key[:8]}...{self.api_key[-4:]}")
+        else:
+            logger.warning("OpenAI API key not found - deployment may fail")
+    
+    def _get_dynamic_api_key(self) -> str:
+        """Try to get API key from various sources for deployment compatibility."""
+        # Try environment variable again
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        if api_key:
+            return api_key
+            
+        # Try Streamlit secrets if available
+        try:
+            import streamlit as st
+            if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+                return st.secrets["OPENAI_API_KEY"]
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.error(f"Failed to access Streamlit secrets: {e}")
+            
+        return ""
+        
     async def generate(self, prompt: str, **kwargs) -> str:
         """Generate text using OpenAI API."""
+        
+        # Check if API key is available
+        if not self.api_key:
+            raise Exception("OpenAI API key not configured. Please set OPENAI_API_KEY in environment variables or Streamlit secrets.")
         
         logger.info(f"=== OPENAI API CALL DEBUG ===")
         logger.info(f"Model: {self.model}")
@@ -251,6 +282,8 @@ class OpenAIClient:
             "stream": False
         }
         
+        last_error = None
+        
         for attempt in range(self.max_retries):
             try:
                 async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
@@ -264,19 +297,39 @@ class OpenAIClient:
                             logger.info(f"Full response (truncated): {response_content[:1000]}...")
                             logger.info(f"=== END OPENAI DEBUG ===")
                             return response_content
+                        elif response.status == 401:
+                            error_text = await response.text()
+                            raise Exception(f"OpenAI API Authentication failed. Please check your API key. Error: {error_text}")
+                        elif response.status == 403:
+                            error_text = await response.text()
+                            raise Exception(f"OpenAI API Access forbidden. Please check your API key permissions. Error: {error_text}")
+                        elif response.status == 429:
+                            error_text = await response.text()
+                            logger.warning(f"OpenAI API rate limit hit (attempt {attempt + 1}): {error_text}")
+                            last_error = f"Rate limit exceeded: {error_text}"
                         else:
                             error_text = await response.text()
                             logger.error(f"OpenAI API error (attempt {attempt + 1}): {response.status} - {error_text}")
+                            last_error = f"HTTP {response.status}: {error_text}"
                             
             except asyncio.TimeoutError:
                 logger.error(f"OpenAI timeout (attempt {attempt + 1})")
+                last_error = "Request timeout"
             except Exception as e:
                 logger.error(f"OpenAI error (attempt {attempt + 1}): {str(e)}")
+                last_error = str(e)
+                # Re-raise authentication/permission errors immediately
+                if "Authentication failed" in str(e) or "Access forbidden" in str(e):
+                    raise e
                 
             if attempt < self.max_retries - 1:
                 await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 
-        raise Exception(f"OpenAI API failed after {self.max_retries} attempts")
+        # Provide more informative error message
+        if "Authentication failed" in str(last_error) or "Access forbidden" in str(last_error):
+            raise Exception(last_error)
+        else:
+            raise Exception(f"OpenAI API failed after {self.max_retries} attempts. Last error: {last_error}")
     
     async def is_available(self) -> bool:
         """Check if OpenAI API is available."""
@@ -565,189 +618,69 @@ class PromptEnhancer:
         return enhanced_result
     
     def _extract_enhanced_prompt(self, ai_response: str, original_prompt: str) -> str:
-        """Extract the enhanced prompt from AI response with comprehensive pattern matching for meta-prompt formats."""
+        """Extract the enhanced prompt from AI response with simplified, reliable extraction."""
         
-        logger.info(f"=== EXTRACTION DEBUG ===")
+        logger.info(f"=== SIMPLIFIED EXTRACTION DEBUG ===")
         logger.info(f"Original prompt length: {len(original_prompt)}")
         logger.info(f"AI response length: {len(ai_response)}")
-        logger.info(f"AI response preview: {ai_response[:300]}...")
+        logger.info(f"AI response preview: {ai_response[:500]}...")
         
         # Clean up the response first
         ai_response = ai_response.strip()
         
-        # Strategy 1: Look for meta-prompt format responses (for our comprehensive system)
         import re
         
-        # Handle [INST]...[/INST] format responses - the response is everything after [/INST]
-        if "[/INST]" in ai_response:
-            after_inst = ai_response.split("[/INST]", 1)[-1].strip()
-            if after_inst and len(after_inst) > len(original_prompt) * 0.5:
-                # Clean up any remaining artifacts
-                after_inst = re.sub(r'^\s*ENHANCED PROMPT:\s*', '', after_inst, flags=re.IGNORECASE)
-                after_inst = re.sub(r'^\s*Enhanced:\s*', '', after_inst, flags=re.IGNORECASE)
-                after_inst = after_inst.strip()
-                if after_inst and after_inst != original_prompt:
-                    logger.info(f"Found enhanced prompt after [/INST]: {after_inst[:100]}...")
-                    return after_inst
-        
-        # Strategy 2: Look for "ENHANCED PROMPT:" marker (our meta-prompt template)
-        enhanced_prompt_pattern = r'ENHANCED PROMPT:\s*(.+?)(?:\n\n|\Z)'
-        match = re.search(enhanced_prompt_pattern, ai_response, re.IGNORECASE | re.DOTALL)
-        if match:
-            enhanced_text = match.group(1).strip()
-            if enhanced_text and enhanced_text != original_prompt and len(enhanced_text) > 10:
-                logger.info(f"Found enhanced prompt after marker: {enhanced_text[:100]}...")
-                return enhanced_text
-        
-        # Strategy 2.1: Look for content after "ENHANCED PROMPT:" (everything after the marker)
+        # Strategy 1: Look for "ENHANCED PROMPT:" marker and take everything after it
         if "ENHANCED PROMPT:" in ai_response.upper():
-            parts = ai_response.upper().split("ENHANCED PROMPT:")
-            if len(parts) > 1:
-                # Get the original case version
-                original_parts = ai_response.split("ENHANCED PROMPT:", 1)
-                if len(original_parts) > 1:
-                    enhanced_text = original_parts[1].strip()
-                    if enhanced_text and enhanced_text != original_prompt and len(enhanced_text) > 10:
-                        logger.info(f"Found enhanced prompt after ENHANCED PROMPT marker: {enhanced_text[:100]}...")
-                        return enhanced_text
+            # Find the marker and extract everything after it
+            marker_index = ai_response.upper().find("ENHANCED PROMPT:")
+            if marker_index != -1:
+                # Find the actual marker position in the original case
+                enhanced_text = ai_response[marker_index + len("ENHANCED PROMPT:"):].strip()
+                
+                # Clean up common prefixes
+                enhanced_text = re.sub(r'^["\'\s]*', '', enhanced_text)  # Remove quotes and whitespace at start
+                enhanced_text = re.sub(r'["\'\s]*$', '', enhanced_text)  # Remove quotes and whitespace at end
+                
+                if enhanced_text and enhanced_text != original_prompt and len(enhanced_text) > 10:
+                    logger.info(f"Found enhanced prompt after marker: {enhanced_text[:200]}...")
+                    return enhanced_text
         
-        # Strategy 3: Look for quoted content (most reliable for prompt responses)
+        # Strategy 2: Look for quoted content (simple quotes extraction)
         quoted_patterns = [
-            r'"([^"]{30,})"',  # Standard double quotes
-            r"'([^']{30,})'",  # Single quotes
-            r'`([^`]{30,})`',  # Backticks
+            r'"([^"]{20,})"',  # Standard double quotes
+            r"'([^']{20,})'",  # Single quotes
         ]
         
         for pattern in quoted_patterns:
-            quoted_matches = re.findall(pattern, ai_response)
+            quoted_matches = re.findall(pattern, ai_response, re.DOTALL)
             for match in quoted_matches:
                 match = match.strip()
-                # Skip if it's just the original prompt or too similar
-                if (match != original_prompt and 
-                    len(match) > len(original_prompt) * 0.7 and
-                    not match.lower().startswith(('here is', 'here\'s', 'this is', 'changes made'))):
-                    logger.info(f"Found enhanced prompt in quotes: {match[:100]}...")
+                if match != original_prompt and len(match) > 20:
+                    logger.info(f"Found enhanced prompt in quotes: {match[:200]}...")
                     return match
         
-        # Strategy 2: Look for content after specific markers
-        lines = ai_response.split('\n')
-        enhanced_sections = []
-        capture = False
+        # Strategy 3: If no marker found, return the entire response (simplified approach)
+        # Clean up the response and use it directly
+        cleaned_response = ai_response.strip()
         
-        for i, line in enumerate(lines):
-            line = line.strip()
-            
-            # Start capturing after enhanced prompt markers
-            if any(marker in line.lower() for marker in [
-                "enhanced prompt for", "enhanced prompt:", "enhanced:", 
-                "optimized prompt:", "improved prompt:", "rewritten prompt:",
-                "better version:", "optimized version:"
-            ]):
-                capture = True
-                
-                # If the line contains the prompt content after the marker, extract it
-                for marker in ["enhanced prompt for", "enhanced prompt:", "enhanced:", 
-                              "optimized prompt:", "improved prompt:", "rewritten prompt:"]:
-                    if marker in line.lower():
-                        after_marker = line[line.lower().find(marker) + len(marker):].strip()
-                        # Remove any remaining markers like "GPT-4:" 
-                        after_marker = re.sub(r'^[A-Z-]+:\s*', '', after_marker)
-                        if after_marker and len(after_marker) > 20:
-                            enhanced_sections.append(after_marker)
-                        break
-                continue
-            
-            # Stop capturing at explanation markers
-            if capture and any(marker in line.lower() for marker in [
-                "changes made:", "explanation:", "reasoning:", "analysis:", 
-                "note:", "why this works:", "breakdown:", "summary:", 
-                "tips:", "additional:", "modifications:", "here's what"
-            ]):
-                break
-                
-            # Capture meaningful lines while in capture mode
-            if capture and line and not line.startswith(('*', '-', '•', '1.', '2.', '3.')):
-                # Clean up any remaining formatting
-                clean_line = re.sub(r'^[""\'`]+|[""\'`]+$', '', line).strip()
-                if clean_line:
-                    enhanced_sections.append(clean_line)
+        # Remove common AI chat prefixes if present
+        prefixes_to_remove = [
+            "here is the enhanced prompt:",
+            "here's the enhanced prompt:",
+            "enhanced prompt:",
+            "the enhanced version:",
+        ]
         
-        # Process captured sections
-        if enhanced_sections:
-            enhanced_prompt = ' '.join(enhanced_sections).strip()
-            
-            # Clean up common AI response artifacts
-            enhanced_prompt = re.sub(r'^[""\'`]+|[""\'`]+$', '', enhanced_prompt)
-            enhanced_prompt = enhanced_prompt.replace('"""', '').replace('```', '').strip()
-            
-            # Remove common prefixes
-            prefixes_to_remove = [
-                "here is the enhanced prompt:",
-                "here's the enhanced prompt:",
-                "here is the",
-                "here's the",
-                "the enhanced version is:",
-                "enhanced version:"
-            ]
-            
-            for prefix in prefixes_to_remove:
-                if enhanced_prompt.lower().startswith(prefix):
-                    enhanced_prompt = enhanced_prompt[len(prefix):].strip()
-            
-            if enhanced_prompt and enhanced_prompt != original_prompt and len(enhanced_prompt) > 20:
-                logger.info(f"Successfully extracted enhanced prompt: {enhanced_prompt[:100]}...")
-                return enhanced_prompt
+        for prefix in prefixes_to_remove:
+            if cleaned_response.lower().startswith(prefix):
+                cleaned_response = cleaned_response[len(prefix):].strip()
         
-        # Strategy 3: Look for the first substantial paragraph that's not explanation
-        paragraphs = ai_response.split('\n\n')
-        for section in paragraphs:
-            section = section.strip()
-            
-            # Skip explanation paragraphs
-            if any(section.lower().startswith(skip) for skip in [
-                'to enhance', 'by providing', 'changes made', 'modifications',
-                'these modifications', 'the inclusion', 'i\'ll consider',
-                'gpt-4 excels', 'however', 'explanation', 'analysis'
-            ]):
-                continue
-                
-            # Look for prompt-like content
-            if (len(section) > len(original_prompt) * 0.5 and 
-                section != original_prompt and
-                section.count(' ') > 5):  # Ensure it's substantial
-                
-                # Clean up the section
-                section = re.sub(r'^[""\'`]+|[""\'`]+$', '', section).strip()
-                
-                if section and section != original_prompt:
-                    logger.info(f"Found enhanced prompt in paragraph: {section[:100]}...")
-                    return section
-        
-        # Strategy 4: Extract first sentence/line that looks like an enhanced prompt
-        sentences = re.split(r'[.!?]+\s+', ai_response)
-        for sentence in sentences:
-            sentence = sentence.strip()
-            
-            # Skip if it's too short or clearly explanatory
-            if (len(sentence) > len(original_prompt) * 0.7 and
-                not sentence.lower().startswith(('to enhance', 'by providing', 'gpt-4', 
-                                                'changes made', 'however', 'the inclusion')) and
-                sentence != original_prompt):
-                
-                sentence = re.sub(r'^[""\'`]+|[""\'`]+$', '', sentence).strip()
-                if sentence:
-                    logger.info(f"Found enhanced prompt in sentence: {sentence[:100]}...")
-                    return sentence
-
-        # Final fallback: return the AI response as-is if extraction fails
-        logger.warning(f"Could not extract enhanced prompt, returning AI response as-is")
-        # If the AI response is reasonable length and different from original, use it
-        if (ai_response != original_prompt and 
-            len(ai_response.strip()) > 10 and 
-            len(ai_response) < len(original_prompt) * 5):  # Sanity check on length
-            logger.info(f"=== EXTRACTION RESULT: AI RESPONSE AS-IS ===")
-            logger.info(f"Returning AI response: {ai_response[:100]}...")
-            return ai_response.strip()
+        # Final validation and return
+        if cleaned_response and cleaned_response != original_prompt and len(cleaned_response) > 10:
+            logger.info(f"=== SIMPLIFIED EXTRACTION RESULT ===")
+            logger.info(f"Using cleaned AI response: {cleaned_response[:200]}...")
+            return cleaned_response
         else:
             # Truly final fallback - return original
             logger.info(f"=== EXTRACTION RESULT: ORIGINAL UNCHANGED ===")

@@ -11,12 +11,12 @@
     <div class="container">
         <header class="header">
             <div class="logo">
-                <span class="logo-icon">🎨</span>
-                <span class="logo-text">AI Prompt Studio</span>
+                <span class="logo-icon">AI</span>
+                <span class="logo-text">Prompt Studio</span>
             </div>
             <div class="header-controls">
                 <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-                    <span class="theme-icon">🌙</span>
+                    <span class="theme-icon">Theme</span>
                 </button>
                 <div class="status-indicator">
                     <span class="status-dot"></span>
@@ -38,7 +38,7 @@
                 <h3 class="section-title">Choose Your AI Model</h3>
                 <div class="model-grid">
                     <div class="model-card" data-model="openai">
-                        <div class="model-icon openai-icon">🤖</div>
+                        <div class="model-icon openai-icon">GPT</div>
                         <h4 class="model-name">OpenAI GPT-4</h4>
                         <p class="model-description">Advanced reasoning with structured thinking</p>
                         <div class="model-features">
@@ -48,7 +48,7 @@
                     </div>
 
                     <div class="model-card" data-model="claude">
-                        <div class="model-icon claude-icon">⚡</div>
+                        <div class="model-icon claude-icon">Claude</div>
                         <h4 class="model-name">Anthropic Claude</h4>
                         <p class="model-description">Thoughtful and nuanced responses</p>
                         <div class="model-features">
@@ -58,7 +58,7 @@
                     </div>
 
                     <div class="model-card" data-model="gemini">
-                        <div class="model-icon gemini-icon">💎</div>
+                        <div class="model-icon gemini-icon">Gemini</div>
                         <h4 class="model-name">Google Gemini</h4>
                         <p class="model-description">Systematic and comprehensive analysis</p>
                         <div class="model-features">
@@ -68,7 +68,7 @@
                     </div>
 
                     <div class="model-card" data-model="grok">
-                        <div class="model-icon grok-icon">🚀</div>
+                        <div class="model-icon grok-icon">Grok</div>
                         <h4 class="model-name">xAI Grok</h4>
                         <p class="model-description">Practical and direct responses</p>
                         <div class="model-features">
@@ -83,7 +83,7 @@
                 <div class="prompt-container">
                     <div class="input-section">
                         <h3 class="section-title">
-                            <span class="section-icon">📝</span>
+                            <span class="section-icon">Input</span>
                             Enter Your Prompt
                         </h3>
                         <textarea 
@@ -103,7 +103,7 @@
 
                     <div class="settings-section">
                         <h3 class="section-title">
-                            <span class="section-icon">⚙️</span>
+                            <span class="section-icon">Settings</span>
                             Enhancement Settings
                         </h3>
                         <div class="setting-group">
@@ -112,11 +112,11 @@
                         </div>
                         <div class="enhance-controls">
                             <button id="enhanceBtn" class="enhance-btn">
-                                <span class="btn-icon">✨</span>
+                                <span class="btn-icon">Enhance</span>
                                 Enhance with AI Intelligence
                             </button>
                             <button id="clearBtn" class="clear-btn">
-                                <span class="btn-icon">🗑️</span>
+                                <span class="btn-icon">Clear</span>
                                 Clear All
                             </button>
                         </div>
@@ -127,16 +127,16 @@
             <section id="resultsSection" class="results-section" style="display: none;">
                 <div class="results-header">
                     <h3 class="section-title">
-                        <span class="section-icon">📊</span>
+                        <span class="section-icon">Results</span>
                         Enhancement Results
                     </h3>
                     <div class="processing-info">
                         <span class="processing-time">
-                            <span class="info-icon">⏱️</span>
+                            <span class="info-icon">Time:</span>
                             Processing time: <span id="processingTime">-</span>ms
                         </span>
                         <span class="model-used">
-                            <span class="info-icon">🤖</span>
+                            <span class="info-icon">Model:</span>
                             Model: <span id="modelUsed">-</span>
                         </span>
                     </div>
@@ -146,13 +146,13 @@
                     <div class="result-panel original-panel">
                         <div class="panel-header">
                             <div class="panel-title-group">
-                                <span class="panel-icon">📄</span>
+                                <span class="panel-icon">Original</span>
                                 <span class="panel-title">Original Prompt</span>
                             </div>
                             <div class="panel-stats">
                                 <span class="word-count" id="originalWordCount">0 words</span>
                                 <button class="panel-copy-btn" data-target="originalPromptDisplay" aria-label="Copy original prompt">
-                                    <span class="btn-icon">📋</span>
+                                    <span class="btn-icon">Copy</span>
                                 </button>
                             </div>
                         </div>
@@ -171,13 +171,13 @@
                     <div class="result-panel enhanced-panel">
                         <div class="panel-header">
                             <div class="panel-title-group">
-                                <span class="panel-icon">✨</span>
+                                <span class="panel-icon">Enhanced</span>
                                 <span class="panel-title">Enhanced Prompt</span>
                             </div>
                             <div class="panel-stats">
                                 <span class="word-count" id="enhancedWordCount">0 words</span>
                                 <button class="panel-copy-btn" data-target="enhancedPromptDisplay" aria-label="Copy enhanced prompt">
-                                    <span class="btn-icon">📋</span>
+                                    <span class="btn-icon">Copy</span>
                                 </button>
                             </div>
                         </div>
@@ -189,12 +189,8 @@
 
                 <div class="results-actions">
                     <button id="copyBtn" class="action-btn copy-btn">
-                        <span class="btn-icon">📋</span>
+                        <span class="btn-icon">Copy</span>
                         Copy Enhanced Prompt
-                    </button>
-                    <button id="exportBtn" class="action-btn export-btn">
-                        <span class="btn-icon">💾</span>
-                        Export Results
                     </button>
                 </div>
             </section>
