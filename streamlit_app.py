@@ -1628,29 +1628,21 @@ def main():
     model_configs = {
         'openai': {
             'name': 'OpenAI GPT-4',
-            'description': 'Advanced reasoning capabilities',
-            'features': ['Structured thinking', 'Detailed analysis'],
             'icon_class': 'openai-icon',
             'icon_text': 'GPT'
         },
         'claude': {
             'name': 'Anthropic Claude',
-            'description': 'Thoughtful and nuanced responses',
-            'features': ['Deep analysis', 'Ethical reasoning'],
             'icon_class': 'claude-icon',
             'icon_text': 'Claude'
         },
         'gemini': {
             'name': 'Google Gemini',
-            'description': 'Comprehensive analysis',
-            'features': ['Structured approach', 'Clear explanations'],
             'icon_class': 'gemini-icon',
             'icon_text': 'Gemini'
         },
         'grok': {
             'name': 'xAI Grok',
-            'description': 'Practical and direct responses',
-            'features': ['Real-time insights', 'Actionable advice'],
             'icon_class': 'grok-icon',
             'icon_text': 'Grok'
         }
@@ -1659,50 +1651,45 @@ def main():
     columns = [col1, col2, col3, col4]
     model_keys = list(model_configs.keys())
     
-    # Display beautiful model cards with icons and selection styling
-    for i, (model_key, config) in enumerate(model_configs.items()):
-        with columns[i]:
-            selected_class = "selected" if st.session_state.selected_model == model_key else ""
-            
-            # Create beautiful HTML model cards
-            card_html = f"""
-            <div class="model-card {selected_class}" style="cursor: pointer;" onclick="window.selectModel('{model_key}')">
-                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
-                <h4 class="model-name">{config['name']}</h4>
-                <p class="model-description">{config['description']}</p>
-                <div class="model-features">
-                    <span class="feature-tag">{config['features'][0]}</span>
-                    <span class="feature-tag">{config['features'][1]}</span>
-                </div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-            
-            # Add invisible button for Streamlit interaction using columns to hide it
-            hidden_col1, hidden_col2 = st.columns([1, 0.001])
-            with hidden_col2:
-                if st.button("•", key=f"btn_{model_key}", help=f"Select {config['name']}"):
-                    st.session_state.selected_model = model_key
-                    st.rerun()
+    # Create clickable model cards using Streamlit components
+    model_selection_html = """
+    <div class="model-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    """
     
-    # Add JavaScript for model card interaction
-    st.markdown("""
-    <script>
-    window.selectModel = function(modelKey) {
-        // Find the corresponding hidden button by looking for buttons with bullet points
-        const buttons = window.parent.document.querySelectorAll('button');
-        const modelButtons = Array.from(buttons).filter(btn => btn.textContent.trim() === '•');
-        
-        // Map model keys to button indices
-        const modelOrder = ['openai', 'claude', 'gemini', 'grok'];
-        const modelIndex = modelOrder.indexOf(modelKey);
-        
-        if (modelIndex >= 0 && modelButtons[modelIndex]) {
-            modelButtons[modelIndex].click();
-        }
-    };
-    </script>
-    """, unsafe_allow_html=True)
+    for model_key, config in model_configs.items():
+        selected_class = "selected" if st.session_state.selected_model == model_key else ""
+        model_selection_html += f"""
+        <div class="model-card {selected_class}" style="cursor: pointer;" onclick="selectModel('{model_key}')">
+            <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
+            <h4 class="model-name">{config['name']}</h4>
+        </div>
+        """
+    
+    model_selection_html += "</div>"
+    
+    # Use Streamlit components for interactive model selection
+    selected_model = st.components.v1.html(
+        f"""
+        {model_selection_html}
+        <script>
+        function selectModel(modelKey) {{
+            // Send selection back to Streamlit
+            window.parent.postMessage({{
+                type: 'streamlit:setComponentValue',
+                value: modelKey
+            }}, '*');
+        }}
+        </script>
+        """,
+        height=300,
+        key="model_selector"
+    )
+    
+    # Update session state when model is selected
+    if selected_model and selected_model != st.session_state.selected_model:
+        st.session_state.selected_model = selected_model
+        st.rerun()
+    
     
     # Prompt Input Section
     st.markdown(f"""
