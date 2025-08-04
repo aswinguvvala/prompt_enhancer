@@ -1225,6 +1225,192 @@ st.markdown("""
           margin: 0.5rem 0 0 0;
           line-height: 1.4;
       }
+      
+      /* Advanced Model Card Animations */
+      .model-card {
+          position: relative;
+          overflow: hidden;
+          transition: all var(--transition-normal);
+          animation: cardFloat 6s ease-in-out infinite;
+      }
+      
+      .model-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+          transition: left 0.8s;
+      }
+      
+      .model-card:hover::before {
+          left: 100%;
+      }
+      
+      .model-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: var(--shadow-colored);
+      }
+      
+      .model-card.selected {
+          animation: selectedPulse 2s ease-in-out infinite;
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.5), var(--shadow-colored);
+      }
+      
+      @keyframes cardFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-2px); }
+      }
+      
+      @keyframes selectedPulse {
+          0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), var(--shadow-colored); }
+          50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6), var(--shadow-colored); }
+      }
+      
+      /* Model Icon Animations */
+      .model-icon {
+          position: relative;
+          transition: all var(--transition-bounce);
+      }
+      
+      .model-card:hover .model-icon {
+          transform: rotateY(360deg) scale(1.1);
+          animation: iconGlow 0.8s ease-out;
+      }
+      
+      @keyframes iconGlow {
+          0% { box-shadow: 0 0 5px currentColor; }
+          50% { box-shadow: 0 0 20px currentColor, 0 0 30px rgba(255, 255, 255, 0.5); }
+          100% { box-shadow: 0 0 5px currentColor; }
+      }
+      
+      /* Feature Tag Animations */
+      .feature-tag {
+          transition: all var(--transition-normal);
+          animation: tagFloat 4s ease-in-out infinite;
+      }
+      
+      .feature-tag:nth-child(1) { animation-delay: 0s; }
+      .feature-tag:nth-child(2) { animation-delay: 0.5s; }
+      
+      .model-card:hover .feature-tag {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-sm);
+      }
+      
+      @keyframes tagFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-1px); }
+      }
+      
+      /* Button Advanced Interactions */
+      .stButton > button {
+          position: relative;
+          overflow: hidden;
+          transition: all var(--transition-normal);
+          animation: buttonIdle 8s ease-in-out infinite;
+      }
+      
+      .stButton > button::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          transition: width 0.6s, height 0.6s;
+      }
+      
+      .stButton > button:hover::before {
+          width: 300px;
+          height: 300px;
+      }
+      
+      .stButton > button:hover {
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: var(--shadow-lg);
+      }
+      
+      @keyframes buttonIdle {
+          0%, 100% { box-shadow: var(--shadow-sm); }
+          50% { box-shadow: var(--shadow-md); }
+      }
+      
+      /* Textarea Advanced Styling */
+      .stTextArea > div > div > textarea {
+          transition: all var(--transition-normal);
+          animation: textareaBreath 10s ease-in-out infinite;
+      }
+      
+      .stTextArea > div > div > textarea:focus {
+          transform: scale(1.01);
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+          animation: textareaFocus 2s ease-out;
+      }
+      
+      @keyframes textareaBreath {
+          0%, 100% { box-shadow: var(--shadow-sm); }
+          50% { box-shadow: var(--shadow-md); }
+      }
+      
+      @keyframes textareaFocus {
+          0% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+          50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.5); }
+          100% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); }
+      }
+      
+      /* Loading and Processing Animations */
+      .processing-indicator {
+          animation: processing 1.5s ease-in-out infinite;
+      }
+      
+      @keyframes processing {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.02); }
+      }
+      
+      /* Enhanced Mobile Touch Feedback */
+      @media (hover: none) and (pointer: coarse) {
+          .model-card:active {
+              transform: scale(0.95);
+              transition: transform 0.1s;
+          }
+          
+          .stButton > button:active {
+              transform: scale(0.95);
+              transition: transform 0.1s;
+          }
+          
+          .feature-tag:active {
+              transform: scale(0.95);
+              transition: transform 0.1s;
+          }
+      }
+      
+      /* Accessibility Enhancements */
+      @media (prefers-reduced-motion: reduce) {
+          * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+          }
+      }
+      
+      /* High Contrast Mode Support */
+      @media (prefers-contrast: high) {
+          .model-card {
+              border: 2px solid;
+          }
+          
+          .feature-tag {
+              border: 1px solid;
+          }
+      }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1442,31 +1628,31 @@ def main():
     model_configs = {
         'openai': {
             'name': 'OpenAI GPT-4',
-            'description': '',
-            'features': [],
+            'description': 'Advanced reasoning with structured thinking',
+            'features': ['Step-by-step reasoning', 'Detailed explanations'],
             'icon_class': 'openai-icon',
             'icon_text': 'GPT'
         },
         'claude': {
             'name': 'Anthropic Claude',
-            'description': '',
-            'features': [],
+            'description': 'Thoughtful and nuanced responses',
+            'features': ['Deep analysis', 'Ethical reasoning'],
             'icon_class': 'claude-icon',
-            'icon_text': 'C'
+            'icon_text': 'Claude'
         },
         'gemini': {
             'name': 'Google Gemini',
-            'description': '',
-            'features': [],
+            'description': 'Systematic and comprehensive analysis',
+            'features': ['Structured approach', 'Clear explanations'],
             'icon_class': 'gemini-icon',
-            'icon_text': 'G'
+            'icon_text': 'Gemini'
         },
         'grok': {
             'name': 'xAI Grok',
-            'description': '',
-            'features': [],
+            'description': 'Practical and direct responses',
+            'features': ['Real-time insights', 'Actionable advice'],
             'icon_class': 'grok-icon',
-            'icon_text': 'X'
+            'icon_text': 'Grok'
         }
     }
     
@@ -1497,6 +1683,11 @@ def main():
             <div class="model-card {selected_class}">
                 <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
                 <h4 class="model-name">{config['name']}</h4>
+                <p class="model-description">{config['description']}</p>
+                <div class="model-features">
+                    <span class="feature-tag">{config['features'][0]}</span>
+                    <span class="feature-tag">{config['features'][1]}</span>
+                </div>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
@@ -1518,7 +1709,7 @@ def main():
         original_prompt = st.text_area(
             "",
             height=200,
-            placeholder="Enter your prompt here... For example: 'Help me create a marketing strategy for a new mobile app' or 'Explain quantum computing in simple terms'",
+            placeholder="How to use this app: 1) Select your target AI model above 2) Enter your original prompt here 3) Click 'Enhance' to optimize it with model-specific techniques 4) Copy the enhanced result for better AI responses",
             label_visibility="collapsed",
             key="prompt_input"
         )
@@ -1543,7 +1734,7 @@ def main():
         <div class="settings-panel" data-theme="{st.session_state.theme}">
             <h4 class="settings-header">
                 <span class="settings-icon">Settings</span>
-                Smart Settings
+                Enhancement Settings
             </h4>
         </div>
         """, unsafe_allow_html=True)
@@ -1553,8 +1744,8 @@ def main():
         
         st.markdown("""
         <div class="enhancement-info">
-            <span class="enhancement-badge">Intelligent Enhancement</span>
-            <p class="enhancement-desc">AI-powered optimization tailored to your selected model</p>
+            <span class="enhancement-badge">Professional Enhancement</span>
+            <p class="enhancement-desc">Model-specific optimization for better AI responses</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1724,3 +1915,98 @@ def main():
 
 if __name__ == "__main__":
     main()
+    /* Enhanced Card Interactions for Streamlit */
+    .stColumn > div {
+        transition: all var(--transition-normal);
+    }
+    
+    .stColumn:hover > div {
+        transform: translateY(-2px);
+    }
+    
+    /* Streamlit Button Enhancements */
+    .stButton > button {
+        background: var(--glass-bg) \!important;
+        border: 1px solid var(--glass-border) \!important;
+        border-radius: 12px \!important;
+        color: var(--text-primary) \!important;
+        font-weight: 500 \!important;
+        padding: 0.75rem 1.5rem \!important;
+        transition: all var(--transition-normal) \!important;
+        backdrop-filter: var(--backdrop-blur) \!important;
+        -webkit-backdrop-filter: var(--backdrop-blur) \!important;
+        box-shadow: var(--shadow-sm) \!important;
+    }
+    
+    .stButton > button:hover {
+        background: rgba(30, 41, 59, 0.9) \!important;
+        border-color: var(--accent-blue) \!important;
+        box-shadow: var(--shadow-glow) \!important;
+        transform: translateY(-1px) \!important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0) \!important;
+        box-shadow: var(--shadow-sm) \!important;
+    }
+    
+    /* Enhanced Textarea */
+    .stTextArea > div > div > textarea {
+        background: var(--glass-bg) \!important;
+        border: 1px solid var(--glass-border) \!important;
+        border-radius: 12px \!important;
+        color: var(--text-primary) \!important;
+        backdrop-filter: var(--backdrop-blur) \!important;
+        -webkit-backdrop-filter: var(--backdrop-blur) \!important;
+        box-shadow: var(--shadow-sm) \!important;
+        transition: all var(--transition-normal) \!important;
+    }
+    
+    .stTextArea > div > div > textarea:focus {
+        border-color: var(--accent-blue) \!important;
+        box-shadow: var(--shadow-glow) \!important;
+        transform: translateY(-1px) \!important;
+    }
+    
+    /* Card Grid Layout Enhancement */
+    .row-widget.stHorizontal {
+        gap: 1rem;
+    }
+    
+    .row-widget.stHorizontal > div {
+        padding: 0.5rem;
+    }
+    
+    /* Floating Animation for Interactive Elements */
+    @keyframes streamlitFloat {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-2px) rotate(0.5deg); }
+        66% { transform: translateY(2px) rotate(-0.5deg); }
+    }
+    
+    .stColumn:nth-child(even) {
+        animation: streamlitFloat 6s ease-in-out infinite;
+        animation-delay: 0.5s;
+    }
+    
+    .stColumn:nth-child(odd) {
+        animation: streamlitFloat 8s ease-in-out infinite;
+        animation-delay: 1s;
+    }
+    
+    /* Enhanced Progress Indicators */
+    .stProgress > div > div {
+        background: var(--accent-blue) \!important;
+        border-radius: 6px \!important;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) \!important;
+    }
+    
+    /* Success/Error States */
+    .stSuccess, .stError, .stWarning, .stInfo {
+        border-radius: 12px \!important;
+        backdrop-filter: var(--backdrop-blur) \!important;
+        -webkit-backdrop-filter: var(--backdrop-blur) \!important;
+        border: 1px solid var(--glass-border) \!important;
+        box-shadow: var(--shadow-sm) \!important;
+    }
+EOF < /dev/null

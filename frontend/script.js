@@ -250,7 +250,7 @@ class PromptEnhancementStudio {
         } else if (!this.selectedModel) {
             btnText.textContent = 'Select a model first';
         } else if (!this.isEnhancing) {
-            btnText.textContent = 'Enhance with AI Intelligence';
+            btnText.textContent = 'Enhance Prompt';
         }
     }
 
@@ -487,7 +487,7 @@ Please provide detailed information and comprehensive explanations to ensure the
             enhanceBtn.classList.add('loading');
         } else {
             btnIcon.textContent = 'Processing...';
-            btnText.textContent = 'Enhance with AI Intelligence';
+            btnText.textContent = 'Enhance Prompt';
             enhanceBtn.classList.remove('loading');
         }
     }

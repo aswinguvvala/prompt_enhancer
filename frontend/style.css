@@ -1995,3 +1995,114 @@ html[data-theme="light"] body {
         radial-gradient(circle at 80% 20%, rgba(64, 255, 218, 0.04) 0%, transparent 50%),
         radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
 }
+/* Light Theme - Extended Coverage */
+
+/* Light Theme - Model Cards */
+html[data-theme="light"] .model-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] .model-card:hover {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="light"] .model-card.selected {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: var(--accent-blue);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+}
+
+/* Light Theme - Analytics Panel */
+html[data-theme="light"] .textarea-analytics {
+    background: rgba(59, 130, 246, 0.03);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+html[data-theme="light"] .textarea-analytics.focused {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="light"] .analytics-item {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+html[data-theme="light"] .analytics-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Light Theme - Buttons */
+html[data-theme="light"] .enhance-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+html[data-theme="light"] .enhance-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+html[data-theme="light"] .clear-btn {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+html[data-theme="light"] .clear-btn:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: var(--text-primary);
+}
+
+/* Light Theme - Input Section */
+html[data-theme="light"] .input-section.analytics-active {
+    background: rgba(59, 130, 246, 0.01);
+}
+
+html[data-theme="light"] .input-section.analytics-active .prompt-input {
+    border-color: rgba(59, 130, 246, 0.2);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Light Theme - Results Section */
+html[data-theme="light"] .result-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="light"] .panel-header {
+    background: rgba(248, 250, 252, 0.8);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* Light Theme - Toast Notifications */
+html[data-theme="light"] .toast {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Light Theme - Loading Overlay */
+html[data-theme="light"] .loading-overlay {
+    background: rgba(248, 250, 252, 0.9);
+}
+
+html[data-theme="light"] .loading-spinner {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
+}
+
+/* Light Theme - Particle System */
+html[data-theme="light"] .particle-canvas {
+    opacity: 0.4;
+}
+
+/* Light Theme - Smooth Transitions */
+html[data-theme="light"] * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+EOF < /dev/null
