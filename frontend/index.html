@@ -8,14 +8,17 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
 </head>
 <body>
+    <!-- Particle Background Canvas -->
+    <canvas id="particleCanvas" class="particle-canvas"></canvas>
+    
     <div class="container">
         <header class="header">
-            <div class="logo">
+            <div class="logo magnetic">
                 <span class="logo-icon">AI</span>
                 <span class="logo-text">Prompt Studio</span>
             </div>
             <div class="header-controls">
-                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+                <button id="themeToggle" class="theme-toggle magnetic" aria-label="Toggle theme">
                     <span class="theme-icon">Theme</span>
                 </button>
                 <div class="status-indicator">
@@ -35,45 +38,45 @@
             </div>
 
             <section class="model-selection">
-                <h3 class="section-title">Choose Your AI Model</h3>
+                <h3 class="section-title floating">Choose Your AI Model</h3>
                 <div class="model-grid">
-                    <div class="model-card" data-model="openai">
-                        <div class="model-icon openai-icon">GPT</div>
+                    <div class="model-card floating" data-model="openai">
+                        <div class="model-icon openai-icon magnetic">GPT</div>
                         <h4 class="model-name">OpenAI GPT-4</h4>
                         <p class="model-description">Advanced reasoning with structured thinking</p>
                         <div class="model-features">
-                            <span class="feature-tag">Step-by-step reasoning</span>
-                            <span class="feature-tag">Detailed explanations</span>
+                            <span class="feature-tag magnetic floating">Step-by-step reasoning</span>
+                            <span class="feature-tag magnetic floating">Detailed explanations</span>
                         </div>
                     </div>
 
-                    <div class="model-card" data-model="claude">
-                        <div class="model-icon claude-icon">Claude</div>
+                    <div class="model-card floating" data-model="claude">
+                        <div class="model-icon claude-icon magnetic">Claude</div>
                         <h4 class="model-name">Anthropic Claude</h4>
                         <p class="model-description">Thoughtful and nuanced responses</p>
                         <div class="model-features">
-                            <span class="feature-tag">Deep analysis</span>
-                            <span class="feature-tag">Ethical reasoning</span>
+                            <span class="feature-tag magnetic floating">Deep analysis</span>
+                            <span class="feature-tag magnetic floating">Ethical reasoning</span>
                         </div>
                     </div>
 
-                    <div class="model-card" data-model="gemini">
-                        <div class="model-icon gemini-icon">Gemini</div>
+                    <div class="model-card floating" data-model="gemini">
+                        <div class="model-icon gemini-icon magnetic">Gemini</div>
                         <h4 class="model-name">Google Gemini</h4>
                         <p class="model-description">Systematic and comprehensive analysis</p>
                         <div class="model-features">
-                            <span class="feature-tag">Structured approach</span>
-                            <span class="feature-tag">Clear explanations</span>
+                            <span class="feature-tag magnetic floating">Structured approach</span>
+                            <span class="feature-tag magnetic floating">Clear explanations</span>
                         </div>
                     </div>
 
-                    <div class="model-card" data-model="grok">
-                        <div class="model-icon grok-icon">Grok</div>
+                    <div class="model-card floating" data-model="grok">
+                        <div class="model-icon grok-icon magnetic">Grok</div>
                         <h4 class="model-name">xAI Grok</h4>
                         <p class="model-description">Practical and direct responses</p>
                         <div class="model-features">
-                            <span class="feature-tag">Real-time insights</span>
-                            <span class="feature-tag">Actionable advice</span>
+                            <span class="feature-tag magnetic floating">Real-time insights</span>
+                            <span class="feature-tag magnetic floating">Actionable advice</span>
                         </div>
                     </div>
                 </div>
@@ -82,8 +85,8 @@
             <section class="prompt-section">
                 <div class="prompt-container">
                     <div class="input-section">
-                        <h3 class="section-title">
-                            <span class="section-icon">Input</span>
+                        <h3 class="section-title floating">
+                            <span class="section-icon magnetic">Input</span>
                             Enter Your Prompt
                         </h3>
                         <textarea 
@@ -99,11 +102,46 @@
                             <span>Selected: </span>
                             <span id="selectedModelName">Anthropic Claude 4 (Opus/Sonnet)</span>
                         </div>
+                        
+                        <!-- Real-time Analytics Panel -->
+                        <div id="textareaAnalytics" class="textarea-analytics" style="display: none;">
+                            <div class="analytics-item" id="wordCountItem">
+                                <div class="analytics-value" id="wordCount">0</div>
+                                <div class="analytics-label">Words</div>
+                            </div>
+                            <div class="analytics-item" id="sentenceCountItem">
+                                <div class="analytics-value" id="sentenceCount">0</div>
+                                <div class="analytics-label">Sentences</div>
+                            </div>
+                            <div class="analytics-item" id="readingTimeItem">
+                                <div class="analytics-value" id="readingTime">0m</div>
+                                <div class="analytics-label">Read Time</div>
+                            </div>
+                            <div class="analytics-item" id="complexityItem">
+                                <div class="analytics-value" id="complexityScore">Basic</div>
+                                <div class="analytics-label">Complexity</div>
+                                <div class="complexity-indicator">
+                                    <div class="complexity-dot" id="dot1"></div>
+                                    <div class="complexity-dot" id="dot2"></div>
+                                    <div class="complexity-dot" id="dot3"></div>
+                                    <div class="complexity-dot" id="dot4"></div>
+                                    <div class="complexity-dot" id="dot5"></div>
+                                </div>
+                            </div>
+                            <div class="analytics-item" id="clarityItem">
+                                <div class="analytics-value" id="clarityScore">Clear</div>
+                                <div class="analytics-label">Clarity</div>
+                            </div>
+                            <div class="analytics-item" id="specificityItem">
+                                <div class="analytics-value" id="specificityScore">Good</div>
+                                <div class="analytics-label">Specificity</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">
-                        <h3 class="section-title">
-                            <span class="section-icon">Settings</span>
+                        <h3 class="section-title floating">
+                            <span class="section-icon magnetic">Settings</span>
                             Enhancement Settings
                         </h3>
                         <div class="setting-group">
@@ -111,11 +149,11 @@
                             <input type="number" id="maxLength" value="512" min="100" max="2000" step="50">
                         </div>
                         <div class="enhance-controls">
-                            <button id="enhanceBtn" class="enhance-btn">
+                            <button id="enhanceBtn" class="enhance-btn magnetic">
                                 <span class="btn-icon">Enhance</span>
                                 Enhance with AI Intelligence
                             </button>
-                            <button id="clearBtn" class="clear-btn">
+                            <button id="clearBtn" class="clear-btn magnetic">
                                 <span class="btn-icon">Clear</span>
                                 Clear All
                             </button>
@@ -126,8 +164,8 @@
 
             <section id="resultsSection" class="results-section" style="display: none;">
                 <div class="results-header">
-                    <h3 class="section-title">
-                        <span class="section-icon">Results</span>
+                    <h3 class="section-title floating">
+                        <span class="section-icon magnetic">Results</span>
                         Enhancement Results
                     </h3>
                     <div class="processing-info">
@@ -151,7 +189,7 @@
                             </div>
                             <div class="panel-stats">
                                 <span class="word-count" id="originalWordCount">0 words</span>
-                                <button class="panel-copy-btn" data-target="originalPromptDisplay" aria-label="Copy original prompt">
+                                <button class="panel-copy-btn magnetic" data-target="originalPromptDisplay" aria-label="Copy original prompt">
                                     <span class="btn-icon">Copy</span>
                                 </button>
                             </div>
@@ -176,7 +214,7 @@
                             </div>
                             <div class="panel-stats">
                                 <span class="word-count" id="enhancedWordCount">0 words</span>
-                                <button class="panel-copy-btn" data-target="enhancedPromptDisplay" aria-label="Copy enhanced prompt">
+                                <button class="panel-copy-btn magnetic" data-target="enhancedPromptDisplay" aria-label="Copy enhanced prompt">
                                     <span class="btn-icon">Copy</span>
                                 </button>
                             </div>
@@ -188,7 +226,7 @@
                 </div>
 
                 <div class="results-actions">
-                    <button id="copyBtn" class="action-btn copy-btn">
+                    <button id="copyBtn" class="action-btn copy-btn magnetic">
                         <span class="btn-icon">Copy</span>
                         Copy Enhanced Prompt
                     </button>

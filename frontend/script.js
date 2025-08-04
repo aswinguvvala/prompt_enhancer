@@ -18,6 +18,7 @@ class PromptEnhancementStudio {
         this.updateEnhanceButtonState(); // Initialize button state
         this.checkBackendHealth();
         this.initializeTheme();
+        this.initializeParticleSystem(); // Initialize particle background
     }
 
     setupEventListeners() {
@@ -191,6 +192,9 @@ class PromptEnhancementStudio {
         
         // Update enhance button state
         this.updateEnhanceButtonState();
+        
+        // Update real-time analytics
+        this.updateTextareaAnalytics(promptInput.value);
         
         // Auto-resize textarea
         this.autoResizeTextarea(promptInput);
@@ -757,6 +761,282 @@ Please provide detailed information and comprehensive explanations to ensure the
     updateThemeIcon() {
         const themeIcon = document.querySelector('.theme-icon');
         themeIcon.textContent = this.currentTheme === 'dark' ? 'Dark' : 'Light';
+    }
+
+    // Initialize particle system
+    initializeParticleSystem() {
+        const canvas = document.getElementById('particleCanvas');
+        if (canvas) {
+            this.particleSystem = new ParticleSystem(canvas);
+            this.particleSystem.init();
+        }
+    }
+    
+    // Real-time textarea analytics
+    updateTextareaAnalytics(text) {
+        const analyticsPanel = document.getElementById('textareaAnalytics');
+        const inputSection = document.querySelector('.input-section');
+        
+        if (text.length > 10) {
+            analyticsPanel.style.display = 'grid';
+            inputSection.classList.add('analytics-active');
+            
+            const analytics = this.calculateTextAnalytics(text);
+            
+            document.getElementById('wordCount').textContent = analytics.wordCount;
+            document.getElementById('sentenceCount').textContent = analytics.sentenceCount;
+            document.getElementById('readingTime').textContent = analytics.readingTime;
+            document.getElementById('complexityScore').textContent = analytics.complexity.label;
+            document.getElementById('clarityScore').textContent = analytics.clarity.label;
+            document.getElementById('specificityScore').textContent = analytics.specificity.label;
+            
+            this.updateComplexityIndicator(analytics.complexity.score);
+            document.getElementById('complexityItem').className = `analytics-item ${analytics.complexity.class}`;
+            document.getElementById('clarityItem').className = `analytics-item ${analytics.clarity.class}`;
+            document.getElementById('specificityItem').className = `analytics-item ${analytics.specificity.class}`;
+        } else {
+            analyticsPanel.style.display = 'none';
+            inputSection.classList.remove('analytics-active');
+        }
+    }
+    
+    calculateTextAnalytics(text) {
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+        const readingTimeMinutes = Math.ceil(words.length / 200);
+        const readingTime = readingTimeMinutes < 1 ? '<1m' : `${readingTimeMinutes}m`;
+        
+        const avgWordsPerSentence = sentences.length > 0 ? words.length / sentences.length : 0;
+        const avgWordLength = words.length > 0 ? words.join('').length / words.length : 0;
+        let complexityScore = Math.min(5, Math.round((avgWordsPerSentence / 12) + (avgWordLength / 4)));
+        
+        const complexity = this.getComplexityLevel(complexityScore);
+        const clarity = this.getClarityLevel(5 - complexityScore + (sentences.length > 0 ? 1 : 0));
+        const specificity = this.getSpecificityLevel(this.calculateSpecificity(text));
+        
+        return {
+            wordCount: words.length,
+            sentenceCount: sentences.length,
+            readingTime,
+            complexity,
+            clarity,
+            specificity
+        };
+    }
+    
+    getComplexityLevel(score) {
+        if (score <= 1) return { label: 'Basic', class: 'excellent', score: 1 };
+        if (score <= 2) return { label: 'Simple', class: 'good', score: 2 };
+        if (score <= 3) return { label: 'Medium', class: 'good', score: 3 };
+        if (score <= 4) return { label: 'Complex', class: 'warning', score: 4 };
+        return { label: 'Advanced', class: 'danger', score: 5 };
+    }
+    
+    getClarityLevel(score) {
+        if (score >= 4) return { label: 'Excellent', class: 'excellent' };
+        if (score >= 3) return { label: 'Clear', class: 'good' };
+        if (score >= 2) return { label: 'Decent', class: 'warning' };
+        return { label: 'Unclear', class: 'danger' };
+    }
+    
+    calculateSpecificity(text) {
+        let score = 3;
+        if (/\d+/.test(text)) score += 0.5;
+        if (/(create|build|implement|analyze|optimize|design)/.test(text.toLowerCase())) score += 0.5;
+        if (/(some|many|various|things|stuff|good|nice)/.test(text.toLowerCase())) score -= 0.5;
+        return Math.max(1, Math.min(5, score));
+    }
+    
+    getSpecificityLevel(score) {
+        if (score >= 4) return { label: 'Precise', class: 'excellent' };
+        if (score >= 3) return { label: 'Good', class: 'good' };
+        if (score >= 2) return { label: 'Vague', class: 'warning' };
+        return { label: 'Too Vague', class: 'danger' };
+    }
+    
+    updateComplexityIndicator(score) {
+        for (let i = 1; i <= 5; i++) {
+            const dot = document.getElementById(`dot${i}`);
+            if (i <= score) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        }
+    }
+}
+
+// Particle System Class
+class ParticleSystem {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.particles = [];
+        this.mouse = { x: 0, y: 0 };
+        this.maxParticles = 80;
+        this.connectionDistance = 120;
+        this.mouseRadius = 150;
+        
+        // Bind methods
+        this.animate = this.animate.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleResize = this.handleResize.bind(this);
+    }
+
+    init() {
+        this.setupCanvas();
+        this.createParticles();
+        this.setupEventListeners();
+        this.animate();
+    }
+
+    setupCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        // Set canvas style for better rendering
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+    }
+
+    setupEventListeners() {
+        window.addEventListener('mousemove', this.handleMouseMove);
+        window.addEventListener('resize', this.handleResize);
+    }
+
+    handleMouseMove(e) {
+        this.mouse.x = e.clientX;
+        this.mouse.y = e.clientY;
+    }
+
+    handleResize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    createParticles() {
+        this.particles = [];
+        for (let i = 0; i < this.maxParticles; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 2 + 1,
+                opacity: Math.random() * 0.5 + 0.3,
+                color: this.getRandomColor()
+            });
+        }
+    }
+
+    getRandomColor() {
+        const colors = [
+            'rgba(102, 126, 234, 0.8)',  // Blue
+            'rgba(139, 92, 246, 0.8)',   // Purple
+            'rgba(100, 255, 218, 0.8)',  // Cyan
+            'rgba(59, 130, 246, 0.8)',   // Light Blue
+            'rgba(167, 139, 250, 0.8)'   // Light Purple
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    updateParticles() {
+        this.particles.forEach(particle => {
+            // Update position
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+
+            // Bounce off walls
+            if (particle.x < 0 || particle.x > this.canvas.width) {
+                particle.vx *= -1;
+            }
+            if (particle.y < 0 || particle.y > this.canvas.height) {
+                particle.vy *= -1;
+            }
+
+            // Keep particles in bounds
+            particle.x = Math.max(0, Math.min(this.canvas.width, particle.x));
+            particle.y = Math.max(0, Math.min(this.canvas.height, particle.y));
+
+            // Mouse interaction
+            const dx = this.mouse.x - particle.x;
+            const dy = this.mouse.y - particle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < this.mouseRadius) {
+                const force = (this.mouseRadius - distance) / this.mouseRadius;
+                const angle = Math.atan2(dy, dx);
+                particle.vx -= Math.cos(angle) * force * 0.01;
+                particle.vy -= Math.sin(angle) * force * 0.01;
+            }
+
+            // Add slight random movement
+            particle.vx += (Math.random() - 0.5) * 0.01;
+            particle.vy += (Math.random() - 0.5) * 0.01;
+
+            // Limit velocity
+            const maxVel = 2;
+            particle.vx = Math.max(-maxVel, Math.min(maxVel, particle.vx));
+            particle.vy = Math.max(-maxVel, Math.min(maxVel, particle.vy));
+
+            // Add drag
+            particle.vx *= 0.99;
+            particle.vy *= 0.99;
+        });
+    }
+
+    drawParticles() {
+        this.particles.forEach(particle => {
+            this.ctx.save();
+            this.ctx.globalAlpha = particle.opacity;
+            this.ctx.fillStyle = particle.color;
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.restore();
+        });
+    }
+
+    drawConnections() {
+        for (let i = 0; i < this.particles.length; i++) {
+            for (let j = i + 1; j < this.particles.length; j++) {
+                const dx = this.particles[i].x - this.particles[j].x;
+                const dy = this.particles[i].y - this.particles[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < this.connectionDistance) {
+                    const opacity = (this.connectionDistance - distance) / this.connectionDistance * 0.3;
+                    
+                    this.ctx.save();
+                    this.ctx.globalAlpha = opacity;
+                    this.ctx.strokeStyle = 'rgba(100, 255, 218, 0.4)';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                    this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                }
+            }
+        }
+    }
+
+    animate() {
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update and draw
+        this.updateParticles();
+        this.drawConnections();
+        this.drawParticles();
+
+        // Continue animation
+        requestAnimationFrame(this.animate);
+    }
+
+    destroy() {
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('resize', this.handleResize);
     }
 }
 
