@@ -1651,44 +1651,61 @@ def main():
     columns = [col1, col2, col3, col4]
     model_keys = list(model_configs.keys())
     
-    # Create clickable model cards using Streamlit components
-    model_selection_html = """
-    <div class="model-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    """
-    
-    for model_key, config in model_configs.items():
-        selected_class = "selected" if st.session_state.selected_model == model_key else ""
-        model_selection_html += f"""
-        <div class="model-card {selected_class}" style="cursor: pointer;" onclick="selectModel('{model_key}')">
-            <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
-            <h4 class="model-name">{config['name']}</h4>
-        </div>
-        """
-    
-    model_selection_html += "</div>"
-    
-    # Use Streamlit components for interactive model selection
-    selected_model = st.components.v1.html(
-        f"""
-        {model_selection_html}
-        <script>
-        function selectModel(modelKey) {{
-            // Send selection back to Streamlit
-            window.parent.postMessage({{
-                type: 'streamlit:setComponentValue',
-                value: modelKey
-            }}, '*');
-        }}
-        </script>
-        """,
-        height=300,
-        key="model_selector"
-    )
-    
-    # Update session state when model is selected
-    if selected_model and selected_model != st.session_state.selected_model:
-        st.session_state.selected_model = selected_model
-        st.rerun()
+    # Create clickable model cards using native Streamlit elements
+    for i, (model_key, config) in enumerate(model_configs.items()):
+        col = columns[i]
+        with col:
+            # Create a custom styled button that looks like a model card
+            is_selected = st.session_state.selected_model == model_key
+            button_style = f"""
+                <div style="
+                    background: {'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' if is_selected else 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)'};
+                    border: {'2px solid #667eea' if is_selected else '1px solid #4a5568'};
+                    border-radius: 12px;
+                    padding: 1.5rem 1rem;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    margin-bottom: 1rem;
+                    box-shadow: {'0 8px 25px rgba(102, 126, 234, 0.3)' if is_selected else '0 4px 15px rgba(0, 0, 0, 0.1)'};
+                ">
+                    <div style="
+                        width: 60px;
+                        height: 60px;
+                        border-radius: 50%;
+                        background: {'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)' if model_key == 'openai' else 
+                                   'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)' if model_key == 'claude' else
+                                   'linear-gradient(135deg, #fdcb6e 0%, #e17055 100%)' if model_key == 'gemini' else
+                                   'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100)'};
+                        margin: 0 auto 1rem auto;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-weight: bold;
+                        font-size: 16px;
+                    ">
+                        {config['icon_text']}
+                    </div>
+                    <h4 style="
+                        color: white;
+                        margin: 0;
+                        font-size: 16px;
+                        font-weight: 600;
+                    ">
+                        {config['name']}
+                    </h4>
+                </div>
+            """
+            
+            # Display the styled card
+            st.markdown(button_style, unsafe_allow_html=True)
+            
+            # Create an invisible button for interaction
+            if st.button(f"Select {config['name']}", key=f"select_{model_key}", 
+                        help=f"Select {config['name']} for prompt enhancement"):
+                st.session_state.selected_model = model_key
+                st.rerun()
     
     
     # Prompt Input Section
