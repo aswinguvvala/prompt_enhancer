@@ -1628,29 +1628,29 @@ def main():
     model_configs = {
         'openai': {
             'name': 'OpenAI GPT-4',
-            'description': 'Advanced reasoning with structured thinking',
-            'features': ['Step-by-step reasoning', 'Detailed explanations'],
+            'description': '',
+            'features': [],
             'icon_class': 'openai-icon',
             'icon_text': 'GPT'
         },
         'claude': {
             'name': 'Anthropic Claude',
-            'description': 'Thoughtful and nuanced responses',
-            'features': ['Deep analysis', 'Ethical reasoning'],
+            'description': '',
+            'features': [],
             'icon_class': 'claude-icon',
             'icon_text': 'Claude'
         },
         'gemini': {
             'name': 'Google Gemini',
-            'description': 'Systematic and comprehensive analysis',
-            'features': ['Structured approach', 'Clear explanations'],
+            'description': '',
+            'features': [],
             'icon_class': 'gemini-icon',
             'icon_text': 'Gemini'
         },
         'grok': {
             'name': 'xAI Grok',
-            'description': 'Practical and direct responses',
-            'features': ['Real-time insights', 'Actionable advice'],
+            'description': '',
+            'features': [],
             'icon_class': 'grok-icon',
             'icon_text': 'Grok'
         }
@@ -1659,38 +1659,24 @@ def main():
     columns = [col1, col2, col3, col4]
     model_keys = list(model_configs.keys())
     
+    # Display model cards with selection styling and clickable interaction
     for i, (model_key, config) in enumerate(model_configs.items()):
         with columns[i]:
             selected_class = "selected" if st.session_state.selected_model == model_key else ""
             
-            card_html = f"""
-            <div class="model-card {selected_class}" onclick="selectModel('{model_key}')">
-                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
-                <h4 class="model-name">{config['name']}</h4>
-            </div>
-            """
-            
-            if st.button(f"Select {config['name']}", key=f"btn_{model_key}", use_container_width=True):
+            # Create clickable card using button with custom styling
+            if st.button(
+                f"{config['icon_text']}\n{config['name']}", 
+                key=f"card_{model_key}", 
+                use_container_width=True,
+                help=f"Select {config['name']}"
+            ):
                 st.session_state.selected_model = model_key
                 st.rerun()
-    
-    # Display selected model cards with selection styling
-    for i, (model_key, config) in enumerate(model_configs.items()):
-        with columns[i]:
-            selected_class = "selected" if st.session_state.selected_model == model_key else ""
             
-            card_html = f"""
-            <div class="model-card {selected_class}">
-                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
-                <h4 class="model-name">{config['name']}</h4>
-                <p class="model-description">{config['description']}</p>
-                <div class="model-features">
-                    <span class="feature-tag">{config['features'][0]}</span>
-                    <span class="feature-tag">{config['features'][1]}</span>
-                </div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
+            # Add visual indication of selection
+            if st.session_state.selected_model == model_key:
+                st.markdown('<div style="text-align: center; color: #4f9cf9; font-size: 0.8rem; margin-top: -0.5rem;">✓ Selected</div>', unsafe_allow_html=True)
     
     # Prompt Input Section
     st.markdown(f"""
@@ -1733,8 +1719,8 @@ def main():
         st.markdown(f"""
         <div class="settings-panel" data-theme="{st.session_state.theme}">
             <h4 class="settings-header">
-                <span class="settings-icon">Settings</span>
-                Enhancement Settings
+                <span class="settings-icon">⚙️</span>
+                Configuration
             </h4>
         </div>
         """, unsafe_allow_html=True)
@@ -1744,8 +1730,8 @@ def main():
         
         st.markdown("""
         <div class="enhancement-info">
-            <span class="enhancement-badge">Professional Enhancement</span>
-            <p class="enhancement-desc">Model-specific optimization for better AI responses</p>
+            <span class="enhancement-badge">AI Enhancement</span>
+            <p class="enhancement-desc">Intelligent prompt optimization</p>
         </div>
         """, unsafe_allow_html=True)
         
