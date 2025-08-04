@@ -1722,18 +1722,12 @@ def main():
     input_col, settings_col = st.columns([2, 1])
     
     with input_col:
-        # Add callback to ensure reactivity
-        def on_text_change():
-            if 'text_changed' not in st.session_state:
-                st.session_state.text_changed = True
-        
         original_prompt = st.text_area(
             "",
             height=200,
             placeholder="How to use this app: 1) Select your target AI model above 2) Enter your original prompt here 3) Click 'Enhance' to optimize it with model-specific techniques 4) Copy the enhanced result for better AI responses",
             label_visibility="collapsed",
-            key="prompt_input",
-            on_change=on_text_change
+            key="prompt_input"
         )
         
         # Character counter
@@ -1758,14 +1752,8 @@ def main():
         # Enhancement buttons
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Check if prompt is valid for enhancement with better reactivity
-        # Force re-evaluation by checking both the text and session state
-        current_text = st.session_state.get('prompt_input', '')
-        prompt_is_valid = bool(current_text and current_text.strip())
-        
-        # Also check the original_prompt variable as backup
-        if not prompt_is_valid:
-            prompt_is_valid = bool(original_prompt and original_prompt.strip())
+        # Check if prompt is valid for enhancement
+        prompt_is_valid = bool(original_prompt and original_prompt.strip())
         
         enhance_button = st.button(
             "Transform My Prompt",
