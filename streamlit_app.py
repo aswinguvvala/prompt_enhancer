@@ -1628,29 +1628,29 @@ def main():
     model_configs = {
         'openai': {
             'name': 'OpenAI GPT-4',
-            'description': '',
-            'features': [],
+            'description': 'Advanced reasoning capabilities',
+            'features': ['Structured thinking', 'Detailed analysis'],
             'icon_class': 'openai-icon',
             'icon_text': 'GPT'
         },
         'claude': {
             'name': 'Anthropic Claude',
-            'description': '',
-            'features': [],
+            'description': 'Thoughtful and nuanced responses',
+            'features': ['Deep analysis', 'Ethical reasoning'],
             'icon_class': 'claude-icon',
             'icon_text': 'Claude'
         },
         'gemini': {
             'name': 'Google Gemini',
-            'description': '',
-            'features': [],
+            'description': 'Comprehensive analysis',
+            'features': ['Structured approach', 'Clear explanations'],
             'icon_class': 'gemini-icon',
             'icon_text': 'Gemini'
         },
         'grok': {
             'name': 'xAI Grok',
-            'description': '',
-            'features': [],
+            'description': 'Practical and direct responses',
+            'features': ['Real-time insights', 'Actionable advice'],
             'icon_class': 'grok-icon',
             'icon_text': 'Grok'
         }
@@ -1659,24 +1659,44 @@ def main():
     columns = [col1, col2, col3, col4]
     model_keys = list(model_configs.keys())
     
-    # Display model cards with selection styling and clickable interaction
+    # Display beautiful model cards with icons and selection styling
     for i, (model_key, config) in enumerate(model_configs.items()):
         with columns[i]:
             selected_class = "selected" if st.session_state.selected_model == model_key else ""
             
-            # Create clickable card using button with custom styling
-            if st.button(
-                f"{config['icon_text']}\n{config['name']}", 
-                key=f"card_{model_key}", 
-                use_container_width=True,
-                help=f"Select {config['name']}"
-            ):
+            # Create beautiful HTML model cards
+            card_html = f"""
+            <div class="model-card {selected_class}" style="cursor: pointer;" onclick="window.selectModel('{model_key}')">
+                <div class="model-icon {config['icon_class']}">{config['icon_text']}</div>
+                <h4 class="model-name">{config['name']}</h4>
+                <p class="model-description">{config['description']}</p>
+                <div class="model-features">
+                    <span class="feature-tag">{config['features'][0]}</span>
+                    <span class="feature-tag">{config['features'][1]}</span>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+            # Add invisible button for Streamlit interaction
+            if st.button(f"Select {config['name']}", key=f"btn_{model_key}", help=f"Select {config['name']}", label_visibility="hidden"):
                 st.session_state.selected_model = model_key
                 st.rerun()
-            
-            # Add visual indication of selection
-            if st.session_state.selected_model == model_key:
-                st.markdown('<div style="text-align: center; color: #4f9cf9; font-size: 0.8rem; margin-top: -0.5rem;">✓ Selected</div>', unsafe_allow_html=True)
+    
+    # Add JavaScript for model card interaction
+    st.markdown("""
+    <script>
+    window.selectModel = function(modelKey) {
+        // Find the corresponding invisible button and click it
+        const buttons = window.parent.document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Select') && button.textContent.toLowerCase().includes(modelKey.toLowerCase())) {
+                button.click();
+            }
+        });
+    };
+    </script>
+    """, unsafe_allow_html=True)
     
     # Prompt Input Section
     st.markdown(f"""
@@ -1692,12 +1712,18 @@ def main():
     input_col, settings_col = st.columns([2, 1])
     
     with input_col:
+        # Add callback to ensure reactivity
+        def on_text_change():
+            if 'text_changed' not in st.session_state:
+                st.session_state.text_changed = True
+        
         original_prompt = st.text_area(
             "",
             height=200,
             placeholder="How to use this app: 1) Select your target AI model above 2) Enter your original prompt here 3) Click 'Enhance' to optimize it with model-specific techniques 4) Copy the enhanced result for better AI responses",
             label_visibility="collapsed",
-            key="prompt_input"
+            key="prompt_input",
+            on_change=on_text_change
         )
         
         # Character counter
@@ -1716,30 +1742,20 @@ def main():
         """, unsafe_allow_html=True)
     
     with settings_col:
-        st.markdown(f"""
-        <div class="settings-panel" data-theme="{st.session_state.theme}">
-            <h4 class="settings-header">
-                <span class="settings-icon">⚙️</span>
-                Configuration
-            </h4>
-        </div>
-        """, unsafe_allow_html=True)
-        
         # Set standard length (hidden from user)
         max_length = 600
-        
-        st.markdown("""
-        <div class="enhancement-info">
-            <span class="enhancement-badge">AI Enhancement</span>
-            <p class="enhancement-desc">Intelligent prompt optimization</p>
-        </div>
-        """, unsafe_allow_html=True)
         
         # Enhancement buttons
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Check if prompt is valid for enhancement
-        prompt_is_valid = bool(original_prompt and original_prompt.strip())
+        # Check if prompt is valid for enhancement with better reactivity
+        # Force re-evaluation by checking both the text and session state
+        current_text = st.session_state.get('prompt_input', '')
+        prompt_is_valid = bool(current_text and current_text.strip())
+        
+        # Also check the original_prompt variable as backup
+        if not prompt_is_valid:
+            prompt_is_valid = bool(original_prompt and original_prompt.strip())
         
         enhance_button = st.button(
             "Transform My Prompt",
@@ -1756,7 +1772,13 @@ def main():
         )
         
         if clear_button:
-            st.session_state.clear()
+            # Clear all session state including text input
+            keys_to_clear = list(st.session_state.keys())
+            for key in keys_to_clear:
+                if key != 'selected_model':  # Keep the selected model
+                    del st.session_state[key]
+            # Reset the text area specifically
+            st.session_state.prompt_input = ""
             st.rerun()
     
     # Enhancement Processing and Results
