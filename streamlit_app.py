@@ -1678,22 +1678,28 @@ def main():
             """
             st.markdown(card_html, unsafe_allow_html=True)
             
-            # Add invisible button for Streamlit interaction
-            if st.button(f"Select {config['name']}", key=f"btn_{model_key}", help=f"Select {config['name']}", label_visibility="hidden"):
-                st.session_state.selected_model = model_key
-                st.rerun()
+            # Add invisible button for Streamlit interaction using columns to hide it
+            hidden_col1, hidden_col2 = st.columns([1, 0.001])
+            with hidden_col2:
+                if st.button("•", key=f"btn_{model_key}", help=f"Select {config['name']}"):
+                    st.session_state.selected_model = model_key
+                    st.rerun()
     
     # Add JavaScript for model card interaction
     st.markdown("""
     <script>
     window.selectModel = function(modelKey) {
-        // Find the corresponding invisible button and click it
+        // Find the corresponding hidden button by looking for buttons with bullet points
         const buttons = window.parent.document.querySelectorAll('button');
-        buttons.forEach(button => {
-            if (button.textContent.includes('Select') && button.textContent.toLowerCase().includes(modelKey.toLowerCase())) {
-                button.click();
-            }
-        });
+        const modelButtons = Array.from(buttons).filter(btn => btn.textContent.trim() === '•');
+        
+        // Map model keys to button indices
+        const modelOrder = ['openai', 'claude', 'gemini', 'grok'];
+        const modelIndex = modelOrder.indexOf(modelKey);
+        
+        if (modelIndex >= 0 && modelButtons[modelIndex]) {
+            modelButtons[modelIndex].click();
+        }
     };
     </script>
     """, unsafe_allow_html=True)
