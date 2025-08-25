@@ -20,6 +20,8 @@ try:
     from config import settings
     from simplified_guides import SIMPLIFIED_MODEL_GUIDES
     from models.prompt_enhancer import PromptEnhancer
+    from advanced_orchestration.pipeline import AdvancedEnhancementPipeline
+    from evaluation.advanced_evaluator import AdvancedPromptEvaluator
     import logging
 except ImportError as e:
     st.error(f"Import error: {e}")
@@ -1424,6 +1426,17 @@ def initialize_enhancer():
         st.error(f"Failed to initialize AI model: {str(e)}")
         return None
 
+@st.cache_resource
+def initialize_advanced_pipeline(enhancer: PromptEnhancer):
+    """Initialize the advanced multi-stage pipeline (optional)."""
+    try:
+        evaluator = AdvancedPromptEvaluator()
+        pipeline = AdvancedEnhancementPipeline(enhancer, evaluator=evaluator)
+        return pipeline
+    except Exception as e:
+        logger.warning(f"Advanced pipeline unavailable: {e}")
+        return None
+
 def check_openai_config():
     """Check if OpenAI API is properly configured."""
     # Try multiple sources for API key
@@ -1552,6 +1565,23 @@ def run_async_enhancement(enhancer, original_prompt, target_model, enhancement_t
         logger.error(f"Async enhancement failed: {str(e)}")
         raise e
 
+async def enhance_advanced_async(pipeline, original_prompt, target_model):
+    result = await pipeline.enhance(prompt=original_prompt, target_model=target_model)
+    return result
+
+def run_async_advanced(pipeline, original_prompt, target_model):
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            enhance_advanced_async(pipeline, original_prompt, target_model)
+        )
+        loop.close()
+        return result
+    except Exception as e:
+        logger.error(f"Advanced async enhancement failed: {str(e)}")
+        raise e
+
 def main():
     """Main Streamlit application with professional UI design."""
     
@@ -1603,6 +1633,7 @@ def main():
     enhancer = initialize_enhancer()
     if not enhancer:
         st.stop()
+    advanced_pipeline = initialize_advanced_pipeline(enhancer)
     
     # Hero Section
     st.markdown(f"""
@@ -1755,6 +1786,11 @@ def main():
         # Check if prompt is valid for enhancement
         prompt_is_valid = bool(original_prompt and original_prompt.strip())
         
+        use_advanced = st.checkbox(
+            "Advanced pipeline (multi-stage + alternatives)", value=False,
+            help="Enable multi-stage orchestration and evaluation"
+        )
+
         enhance_button = st.button(
             "Transform My Prompt",
             type="primary",
@@ -1785,10 +1821,22 @@ def main():
             try:
                 start_time = time.time()
                 
-                # Run enhancement (always use comprehensive)
-                enhanced_prompt, processing_time, backend_used = run_async_enhancement(
-                    enhancer, original_prompt, st.session_state.selected_model, "comprehensive"
-                )
+                if use_advanced and advanced_pipeline is not None:
+                    t0 = time.time()
+                    adv_result = run_async_advanced(
+                        advanced_pipeline, original_prompt, st.session_state.selected_model
+                    )
+                    processing_time = time.time() - t0
+                    enhanced_prompt = adv_result.enhanced_prompt
+                    backend_used = "advanced_pipeline"
+                    st.session_state.last_alternatives = adv_result.alternative_versions
+                    st.session_state.last_metrics = adv_result.metrics
+                    st.session_state.last_trace = adv_result.pipeline_trace
+                else:
+                    # Run baseline enhancement (comprehensive)
+                    enhanced_prompt, processing_time, backend_used = run_async_enhancement(
+                        enhancer, original_prompt, st.session_state.selected_model, "comprehensive"
+                    )
                 
                 # Store results in session state
                 st.session_state.last_original = original_prompt
@@ -1908,6 +1956,16 @@ def main():
                 <div class="panel-content">{st.session_state.last_enhanced}</div>
             </div>
             """, unsafe_allow_html=True)
+
+        # Advanced details
+        if hasattr(st.session_state, 'last_alternatives') and st.session_state.last_alternatives:
+            with st.expander("View alternative enhanced prompts"):
+                for i, alt in enumerate(st.session_state.last_alternatives, 1):
+                    st.markdown(f"**Alternative {i}**")
+                    st.code(alt)
+        if hasattr(st.session_state, 'last_metrics') and st.session_state.last_metrics:
+            with st.expander("Quality metrics"):
+                st.json(st.session_state.last_metrics)
         
         # Action buttons
         st.markdown("<br>", unsafe_allow_html=True)

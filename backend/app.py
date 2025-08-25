@@ -16,16 +16,37 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 import uvicorn
 
-from config import settings
-from simplified_guides import SIMPLIFIED_MODEL_GUIDES
-from models.prompt_enhancer import PromptEnhancer
+try:
+    from config import settings  # when backend on sys.path
+    from simplified_guides import SIMPLIFIED_MODEL_GUIDES
+except ImportError:  # package-relative when imported as backend.app
+    from .config import settings
+    from .simplified_guides import SIMPLIFIED_MODEL_GUIDES
+try:
+    from models.prompt_enhancer import PromptEnhancer
+except ImportError:
+    from .models.prompt_enhancer import PromptEnhancer
+try:
+    from advanced_orchestration.pipeline import AdvancedEnhancementPipeline, EnhancementStrategy
+    from evaluation.advanced_evaluator import AdvancedPromptEvaluator
+    from monitoring.production_monitor import ProductionMonitor
+    from rag_system.prompt_kb import PromptKnowledgeBase
+except ImportError:
+    from .advanced_orchestration.pipeline import AdvancedEnhancementPipeline, EnhancementStrategy
+    from .evaluation.advanced_evaluator import AdvancedPromptEvaluator
+    from .monitoring.production_monitor import ProductionMonitor
+    from .rag_system.prompt_kb import PromptKnowledgeBase
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
 logger = logging.getLogger(__name__)
 
-# Global prompt enhancer instance
+# Global instances
 prompt_enhancer = None
+advanced_pipeline = None
+advanced_evaluator = None
+production_monitor = None
+prompt_kb = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,9 +57,20 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting AI Prompt Enhancement Studio...")
     
     try:
-        # Initialize prompt enhancer
+        # Initialize core enhancer
         prompt_enhancer = PromptEnhancer()
         logger.info("✅ AI model integration initialized successfully")
+
+        # Initialize advanced modules (best-effort)
+        try:
+            global advanced_evaluator, advanced_pipeline, production_monitor, prompt_kb
+            advanced_evaluator = AdvancedPromptEvaluator()
+            prompt_kb = PromptKnowledgeBase()
+            advanced_pipeline = AdvancedEnhancementPipeline(prompt_enhancer, evaluator=advanced_evaluator)
+            production_monitor = ProductionMonitor()
+            logger.info("✅ Advanced pipeline, evaluator, and monitoring ready")
+        except Exception as sub_e:
+            logger.warning(f"Advanced modules degraded: {sub_e}")
         
         # Perform health check
         health_status = await prompt_enhancer.health_check()
@@ -108,6 +140,7 @@ class EnhanceResponse(BaseModel):
     processing_time: float
     backend_used: str
     metadata: Optional[Dict[str, Any]] = None
+    advanced: Optional[Dict[str, Any]] = None
 
 class HealthResponse(BaseModel):
     status: str
@@ -288,6 +321,61 @@ async def get_available_models():
         "total_models": len(SIMPLIFIED_MODEL_GUIDES)
     }
 
+@app.post("/enhance/advanced")
+async def enhance_prompt_advanced(request: EnhanceRequest):
+    """Use the advanced multi-stage pipeline with monitoring and basic RAG hints."""
+    start_time = time.time()
+    if not (prompt_enhancer and advanced_pipeline):
+        raise HTTPException(status_code=503, detail="Advanced pipeline not available")
+
+    # Optional: RAG insights (non-blocking)
+    rag_insights: Dict[str, Any] = {}
+    try:
+        if prompt_kb:
+            rag_insights = await prompt_kb.get_enhancement_insights(request.original_prompt, request.target_model)
+    except Exception:
+        rag_insights = {}
+
+    async def _run(prompt: str, model: str, **kwargs):
+        return await advanced_pipeline.enhance(prompt=prompt, target_model=model, strategy=EnhancementStrategy.CLARITY_FOCUSED)
+
+    # Monitor
+    monitored = await production_monitor.monitor_enhancement(_run, request.original_prompt, request.target_model) if production_monitor else {"success": True, "result": await _run(request.original_prompt, request.target_model), "latency": None}
+
+    if not monitored.get("success"):
+        raise HTTPException(status_code=500, detail=f"Advanced enhancement failed: {monitored.get('error')}")
+
+    result = monitored["result"]
+    processing_time = (time.time() - start_time) * 1000
+
+    # Persist successful pattern to KB (best-effort)
+    try:
+        if prompt_kb and isinstance(result.metrics, dict):
+            await prompt_kb.add_prompt_pattern(
+                prompt=request.original_prompt,
+                enhanced_prompt=result.enhanced_prompt,
+                metrics=result.metrics,
+                target_model=request.target_model,
+                tags=[request.enhancement_type]
+            )
+    except Exception:
+        pass
+
+    return EnhanceResponse(
+        enhanced_prompt=result.enhanced_prompt,
+        original_prompt=request.original_prompt,
+        target_model=request.target_model,
+        processing_time=processing_time,
+        backend_used="advanced_pipeline",
+        metadata={"context_injection_used": True, "rag_insights": rag_insights},
+        advanced={
+            "alternatives": result.alternative_versions,
+            "metrics": result.metrics,
+            "experiment_id": result.experiment_id,
+            "pipeline_trace": result.pipeline_trace,
+        },
+    )
+
 @app.get("/models/{model_name}")
 async def get_model_info(model_name: str):
     """Get detailed information about a specific model."""
@@ -324,7 +412,10 @@ def create_context_injection_prompt(original_prompt: str, target_model: str, enh
     avoid_section = "\\n".join([f"• {rule}" for rule in avoid_rules])
     
     # Anti-XML instructions for natural language output
-    from simplified_guides import ANTI_XML_INSTRUCTIONS, ENHANCEMENT_INSTRUCTIONS
+    try:
+        from simplified_guides import ANTI_XML_INSTRUCTIONS, ENHANCEMENT_INSTRUCTIONS
+    except ImportError:
+        from .simplified_guides import ANTI_XML_INSTRUCTIONS, ENHANCEMENT_INSTRUCTIONS
     enhancement_instructions = ENHANCEMENT_INSTRUCTIONS[:5] if enhancement_type == "comprehensive" else ENHANCEMENT_INSTRUCTIONS[:3]
     enhancement_section = "\\n".join([f"• {instruction}" for instruction in enhancement_instructions])
     anti_xml_section = "\\n".join([f"• {instruction}" for instruction in ANTI_XML_INSTRUCTIONS[:4]])

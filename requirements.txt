@@ -15,3 +15,12 @@ aiohttp>=3.9.0
 
 # Basic utilities
 requests>=2.31.0
+
+# API backend
+fastapi>=0.110.0
+uvicorn>=0.23.0
+
+# Optional advanced stack (kept minimal to avoid heavy installs by default)
+# sentence-transformers
+# faiss-cpu
+# redis

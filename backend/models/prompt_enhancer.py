@@ -13,7 +13,10 @@ import os
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
-from config import settings
+try:
+    from config import settings
+except ImportError:
+    from ..config import settings
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
