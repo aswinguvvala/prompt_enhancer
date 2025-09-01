@@ -1427,9 +1427,10 @@ def initialize_enhancer():
         return None
 
 @st.cache_resource
-def initialize_advanced_pipeline(enhancer: PromptEnhancer):
+def initialize_advanced_pipeline():
     """Initialize the advanced multi-stage pipeline (optional)."""
     try:
+        enhancer = PromptEnhancer()
         evaluator = AdvancedPromptEvaluator()
         pipeline = AdvancedEnhancementPipeline(enhancer, evaluator=evaluator)
         return pipeline
@@ -1633,7 +1634,7 @@ def main():
     enhancer = initialize_enhancer()
     if not enhancer:
         st.stop()
-    advanced_pipeline = initialize_advanced_pipeline(enhancer)
+    advanced_pipeline = initialize_advanced_pipeline()
     
     # Hero Section
     st.markdown(f"""
