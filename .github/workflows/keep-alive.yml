@@ -1,0 +1,66 @@
+name: Keep Deployment Active
+
+on:
+  schedule:
+    # Run every 5 hours (at minutes 0 of hours 0, 5, 10, 15, 20)
+    - cron: '0 */5 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Generate timestamp and commit message
+      id: commit-info
+      run: |
+        TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        RUN_NUMBER=${{ github.run_number }}
+        
+        # Use modulo to alternate between messages (odd/even)
+        if [ $((RUN_NUMBER % 2)) -eq 1 ]; then
+          COMMIT_MSG="🚀 Keep deployment active - Auto commit [$TIMESTAMP]"
+        else
+          COMMIT_MSG="⚡ Deployment maintenance - Auto commit [$TIMESTAMP]"
+        fi
+        
+        echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+        echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+        
+    - name: Create keep-alive marker
+      run: |
+        # Create or update a keep-alive file to ensure there's always something to commit
+        echo "Last keep-alive: ${{ steps.commit-info.outputs.timestamp }}" > .keep-alive
+        echo "Run number: ${{ github.run_number }}" >> .keep-alive
+        
+    - name: Commit and push changes
+      run: |
+        git add .keep-alive
+        
+        # Check if there are changes to commit
+        if git diff --cached --quiet; then
+          echo "No changes to commit, creating empty commit"
+          git commit --allow-empty -m "${{ steps.commit-info.outputs.commit_message }}"
+        else
+          git commit -m "${{ steps.commit-info.outputs.commit_message }}"
+        fi
+        
+        git push origin main
+        
+    - name: Workflow summary
+      run: |
+        echo "✅ Keep-alive commit successful"
+        echo "📝 Commit message: ${{ steps.commit-info.outputs.commit_message }}"
+        echo "🕐 Timestamp: ${{ steps.commit-info.outputs.timestamp }}"
+        echo "🔢 Run number: ${{ github.run_number }}"
